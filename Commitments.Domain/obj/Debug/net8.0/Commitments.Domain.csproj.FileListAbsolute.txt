@@ -1,0 +1,11 @@
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\bin\Debug\net8.0\Commitments.Domain.deps.json
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\bin\Debug\net8.0\Commitments.Domain.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\bin\Debug\net8.0\Commitments.Domain.pdb
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.AssemblyInfoInputs.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.AssemblyInfo.cs
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.csproj.CoreCompileInputs.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\refint\Commitments.Domain.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.pdb
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\ref\Commitments.Domain.dll

@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- Disable implicit fallback NuGet packages folder to avoid Windows VS path inside Linux container -->
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,17 @@
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\bin\Debug\net8.0\Commitments.Infrastructure.deps.json
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\bin\Debug\net8.0\Commitments.Infrastructure.runtimeconfig.json
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\bin\Debug\net8.0\Commitments.Infrastructure.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\bin\Debug\net8.0\Commitments.Infrastructure.pdb
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\bin\Debug\net8.0\Commitments.Domain.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\bin\Debug\net8.0\Commitments.Domain.pdb
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.AssemblyInfo.cs
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitme.41B35222.Up2Date
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\refint\Commitments.Infrastructure.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.pdb
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.genruntimeconfig.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\ref\Commitments.Infrastructure.dll
