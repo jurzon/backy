@@ -6,7 +6,6 @@ namespace Commitments.Tests.Domain;
 
 public class CommitmentTransitionTests
 {
-    // TODO: Replace direct DateTime.UtcNow usage with IClock abstraction + improved recurrence; some tests skipped until then.
     private Commitment NewActive(DateTime deadlineUtc)
     {
         var startDate = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2);
@@ -31,7 +30,7 @@ public class CommitmentTransitionTests
         act.Should().Throw<InvalidOperationException>();
     }
 
-    [Fact(Skip = "TODO: recurrence/time refactor needed - deadline / occurrence validation interference")]
+    [Fact]
     public void Complete_works_in_decision_needed()
     {
         var c = NewActive(DateTime.UtcNow.AddDays(30));
@@ -48,7 +47,7 @@ public class CommitmentTransitionTests
         c.Status.Should().Be(CommitmentStatus.Failed);
     }
 
-    [Fact(Skip = "TODO: recurrence/time refactor needed - deadline / occurrence validation interference")]
+    [Fact]
     public void Fail_allowed_from_decision_needed()
     {
         var c = NewActive(DateTime.UtcNow.AddDays(30));
@@ -57,7 +56,7 @@ public class CommitmentTransitionTests
         c.Status.Should().Be(CommitmentStatus.Failed);
     }
 
-    [Fact(Skip = "TODO: recurrence/time refactor needed - deadline / occurrence validation interference")]
+    [Fact]
     public void Cannot_delete_active()
     {
         var c = NewActive(DateTime.UtcNow.AddDays(30));
@@ -68,9 +67,9 @@ public class CommitmentTransitionTests
     [Fact]
     public void Cannot_cancel_inside_locked_window()
     {
-        // With long deadline lock not active; ensure cancel succeeds then re-check behavior later after refactor.
-        var c = NewActive(DateTime.UtcNow.AddDays(30));
-        c.Cancel();
-        c.Status.Should().Be(CommitmentStatus.Cancelled);
+        // locked window begins 24h before deadline. Use deadline 23h ahead => cancel should throw locked.
+        var c = NewActive(DateTime.UtcNow.AddHours(23));
+        var act = () => c.Cancel();
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Locked*");
     }
 }
