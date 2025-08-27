@@ -6,7 +6,7 @@ namespace Commitments.Tests.Scheduling;
 public class ScheduleTests
 {
     [Fact]
-    public void Daily_next_occurrence_before_deadline()
+    public void DailyNextOccurrenceBeforeDeadline()
     {
         var now = DateTime.UtcNow;
         var today = DateOnly.FromDateTime(now.Date);
@@ -17,7 +17,7 @@ public class ScheduleTests
     }
 
     [Fact]
-    public void Weekly_respects_selected_days()
+    public void WeeklyRespectsSelectedDays()
     {
         var now = DateTime.UtcNow;
         var start = DateOnly.FromDateTime(now.Date);
@@ -28,7 +28,7 @@ public class ScheduleTests
     }
 
     [Fact]
-    public void Monthly_day_clamp_does_not_exceed_deadline()
+    public void MonthlyDayClampDoesNotExceedDeadline()
     {
         var now = DateTime.UtcNow;
         var targetDay = 31;

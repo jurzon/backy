@@ -6,7 +6,7 @@ namespace Commitments.Tests.Validation;
 
 public class CommitmentRequestValidatorTests
 {
-    private CreateCommitmentRequest MakeValid(Action<CreateCommitmentRequest>? mutate = null)
+    private static CreateCommitmentRequest MakeValid(Action<CreateCommitmentRequest>? mutate = null)
     {
         var req = new CreateCommitmentRequest(
             UserId: Guid.NewGuid(),
@@ -31,7 +31,7 @@ public class CommitmentRequestValidatorTests
     }
 
     [Fact]
-    public void Valid_request_has_no_errors()
+    public void ValidRequestHasNoErrors()
     {
         var req = MakeValid();
         var errors = CommitmentRequestValidator.Validate(req);
@@ -39,7 +39,7 @@ public class CommitmentRequestValidatorTests
     }
 
     [Fact]
-    public void Stake_must_be_positive()
+    public void StakeMustBePositive()
     {
         var req = MakeValid(r => r = r with { StakeAmount = 0 });
         var errors = CommitmentRequestValidator.Validate(req with { StakeAmount = 0 });
@@ -47,7 +47,7 @@ public class CommitmentRequestValidatorTests
     }
 
     [Fact]
-    public void Deadline_must_be_future_plus_1h()
+    public void DeadlineMustBeFuturePlusOneHour()
     {
         var req = MakeValid();
         var near = DateTime.UtcNow.AddMinutes(30);
@@ -56,7 +56,7 @@ public class CommitmentRequestValidatorTests
     }
 
     [Fact]
-    public void Weekly_requires_weekdaysMask()
+    public void WeeklyRequiresWeekdaysMask()
     {
         var req = MakeValid(r => r = r with { Schedule = r.Schedule with { PatternType = "weekly" } });
         var adjusted = req with { Schedule = req.Schedule with { PatternType = "weekly", WeekdaysMask = null } };
@@ -65,7 +65,7 @@ public class CommitmentRequestValidatorTests
     }
 
     [Fact]
-    public void Monthly_day_requires_monthDay()
+    public void MonthlyDayRequiresMonthDay()
     {
         var req = MakeValid();
         var adjusted = req with { Schedule = req.Schedule with { PatternType = "monthly_day", MonthDay = null } };
@@ -74,7 +74,7 @@ public class CommitmentRequestValidatorTests
     }
 
     [Fact]
-    public void Monthly_nth_requires_nthWeek_and_nthWeekday()
+    public void MonthlyNthRequiresNthWeekAndNthWeekday()
     {
         var req = MakeValid();
         var adjusted = req with { Schedule = req.Schedule with { PatternType = "monthly_nth", NthWeek = null, NthWeekday = null } };

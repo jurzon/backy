@@ -9,7 +9,7 @@ namespace Commitments.Tests.Payments;
 
 public class PaymentRetryWorkerTests
 {
-    private AppDbContext CreateDb()
+    private static AppDbContext CreateDb()
     {
         var opts = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -17,7 +17,7 @@ public class PaymentRetryWorkerTests
         return new AppDbContext(opts);
     }
 
-    private PaymentIntentLog FailedLog(Guid commitmentId, int attempt, string? errorCode = null)
+    private static PaymentIntentLog FailedLog(Guid commitmentId, int attempt, string? errorCode = null)
         => new()
         {
             CommitmentId = commitmentId,
@@ -31,7 +31,7 @@ public class PaymentRetryWorkerTests
         };
 
     [Fact]
-    public async Task Retries_failed_non_hard_decline_and_marks_succeeded()
+    public async Task RetriesFailedNonHardDeclineAndMarksSucceeded()
     {
         using var db = CreateDb();
         var commitmentId = Guid.NewGuid();
@@ -47,7 +47,7 @@ public class PaymentRetryWorkerTests
     }
 
     [Fact]
-    public async Task Skips_hard_decline()
+    public async Task SkipsHardDecline()
     {
         using var db = CreateDb();
         var commitmentId = Guid.NewGuid();
@@ -62,7 +62,7 @@ public class PaymentRetryWorkerTests
         log.AttemptNumber.Should().Be(1);
     }
 
-    private class DummyPaymentService : IPaymentService
+    private sealed class DummyPaymentService : IPaymentService
     {
         public Task<PaymentIntentLog> CreateFailurePaymentIntentAsync(Commitment commitment, CancellationToken ct = default) => throw new NotImplementedException();
         public Task EnsureSetupIntentAsync(Guid userId, CancellationToken ct = default) => Task.CompletedTask;

@@ -11,9 +11,9 @@ public class GraceExpiryScannerTests
 {
     private sealed class FakeClock : IClock { public DateTime UtcNow { get; set; } }
 
-    private AppDbContext CreateDb() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+    private static AppDbContext CreateDb() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
 
-    private Commitment NewCommitment(DateTime now, DateTime deadlineUtc)
+    private static Commitment NewCommitment(DateTime now, DateTime deadlineUtc)
     {
         var startDate = DateOnly.FromDateTime(now.Date).AddDays(-2);
         var schedule = Schedule.CreateDaily(startDate, new TimeOnly(9,0), "UTC", 1);
@@ -27,7 +27,7 @@ public class GraceExpiryScannerTests
     }
 
     [Fact]
-    public async Task Transitions_active_past_deadline_to_decision_needed_and_sets_grace()
+    public async Task TransitionsActivePastDeadlineToDecisionNeededAndSetsGrace()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };
@@ -43,7 +43,7 @@ public class GraceExpiryScannerTests
     }
 
     [Fact]
-    public async Task Creates_final_warning_event_if_inside_final_window()
+    public async Task CreatesFinalWarningEventIfInsideFinalWindow()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };
@@ -60,7 +60,7 @@ public class GraceExpiryScannerTests
     }
 
     [Fact]
-    public async Task Auto_fails_expired_grace()
+    public async Task AutoFailsExpiredGrace()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };

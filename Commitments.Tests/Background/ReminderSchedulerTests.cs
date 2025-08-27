@@ -11,7 +11,7 @@ public class ReminderSchedulerTests
 {
     private sealed class FakeClock : IClock { public DateTime UtcNow { get; set; } }
 
-    private AppDbContext CreateDb()
+    private static AppDbContext CreateDb()
     {
         var opts = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -19,7 +19,7 @@ public class ReminderSchedulerTests
         return new AppDbContext(opts);
     }
 
-    private Commitment SeedCommitment(AppDbContext db, Schedule schedule, DateTime? deadlineUtc = null)
+    private static Commitment SeedCommitment(AppDbContext db, Schedule schedule, DateTime? deadlineUtc = null)
     {
         var deadline = deadlineUtc ?? DateTime.UtcNow.AddDays(10);
         var c = Commitment.Create(Guid.NewGuid(), "Test goal", 500, "EUR", deadline, "UTC", schedule);
@@ -29,7 +29,7 @@ public class ReminderSchedulerTests
     }
 
     [Fact]
-    public async Task Builds_events_for_active_commitment()
+    public async Task BuildsEventsForActiveCommitment()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };
@@ -43,7 +43,7 @@ public class ReminderSchedulerTests
     }
 
     [Fact]
-    public async Task Idempotent_does_not_duplicate()
+    public async Task IdempotentDoesNotDuplicate()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };
@@ -60,7 +60,7 @@ public class ReminderSchedulerTests
     }
 
     [Fact]
-    public async Task Skips_non_active()
+    public async Task SkipsNonActiveCommitments()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };

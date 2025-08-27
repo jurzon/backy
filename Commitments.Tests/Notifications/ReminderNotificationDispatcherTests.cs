@@ -9,15 +9,15 @@ namespace Commitments.Tests.Notifications;
 
 public class ReminderNotificationDispatcherTests
 {
-    private class FakeClock : IClock { public DateTime UtcNow { get; set; } }
+    private sealed class FakeClock : IClock { public DateTime UtcNow { get; set; } }
 
-    private AppDbContext CreateDb()
+    private static AppDbContext CreateDb()
     {
         var opts = new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options;
         return new AppDbContext(opts);
     }
 
-    private Commitment SeedCommitment(AppDbContext db, DateTime deadline)
+    private static Commitment SeedCommitment(AppDbContext db, DateTime deadline)
     {
         var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2), new TimeOnly(9,0), "UTC", 1);
         var c = Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadline, "UTC", schedule);
@@ -27,7 +27,7 @@ public class ReminderNotificationDispatcherTests
     }
 
     [Fact]
-    public async Task Sends_pending_reminders_outside_quiet_hours()
+    public async Task SendsPendingRemindersOutsideQuietHours()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow.Date.AddHours(12) }; // midday
@@ -42,7 +42,7 @@ public class ReminderNotificationDispatcherTests
     }
 
     [Fact]
-    public async Task Defers_in_quiet_hours()
+    public async Task DefersInQuietHours()
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow.Date.AddHours(23) }; // 23:00
@@ -60,7 +60,7 @@ public class ReminderNotificationDispatcherTests
     }
 
     [Fact]
-    public async Task After_quiet_end_sends()
+    public async Task SendsAfterQuietEnd()
     {
         using var db = CreateDb();
         var start = DateTime.UtcNow.Date.AddHours(23); // inside quiet 23:00
