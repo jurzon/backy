@@ -27,7 +27,8 @@ public class ReminderScheduler(AppDbContext db, IClock clock) : IReminderSchedul
         foreach (var c in commitments)
         {
             if (c.Schedule == null) continue;
-            var occurrences = c.Schedule.PreviewNextOccurrences(min(c.DeadlineUtc, horizonEnd), 20);
+            var toDeadlineOrHorizon = min(c.DeadlineUtc, horizonEnd);
+            var occurrences = c.Schedule.PreviewNextOccurrences(now, toDeadlineOrHorizon, 20);
             foreach (var occ in occurrences)
             {
                 if (!await db.ReminderEvents.AnyAsync(r => r.CommitmentId == c.Id && r.ScheduledForUtc == occ, ct))

@@ -59,11 +59,10 @@ public class Schedule
             NthWeekday = nthWeekday
         };
 
-    public IEnumerable<DateTime> PreviewNextOccurrences(DateTime deadlineUtc, int count)
+    public IEnumerable<DateTime> PreviewNextOccurrences(DateTime fromUtc, DateTime deadlineUtc, int count)
     {
         var list = new List<DateTime>();
-        var after = DateTime.UtcNow.AddMinutes(-1); // ensure at least next
-        DateTime? next = NextOccurrence(after, deadlineUtc);
+        DateTime? next = NextOccurrence(fromUtc, deadlineUtc);
         while (next != null && next < deadlineUtc && list.Count < count)
         {
             list.Add(next.Value);

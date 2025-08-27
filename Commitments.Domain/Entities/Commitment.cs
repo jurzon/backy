@@ -56,7 +56,8 @@ public class Commitment
     private void ValidateScheduleHasOccurrenceBeforeDeadline()
     {
         if (Schedule == null) throw new InvalidOperationException("Schedule missing");
-        var next = Schedule.PreviewNextOccurrences(DeadlineUtc, 1).FirstOrDefault();
+        var now = DateTime.UtcNow.AddMinutes(-1); // allow immediate next
+        var next = Schedule.PreviewNextOccurrences(now, DeadlineUtc, 1).FirstOrDefault();
         if (next == default || next >= DeadlineUtc)
             throw new InvalidOperationException("Schedule must occur before deadline");
     }
