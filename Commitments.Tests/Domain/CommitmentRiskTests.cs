@@ -24,7 +24,7 @@ public class CommitmentRiskTests
     private static int Expected(Commitment c, DateTime asOf) => c.Schedule!.CountOccurrencesUpTo(asOf, c.DeadlineUtc);
 
     [Fact]
-    public void Critical_when_less_than_24h_and_low_adherence()
+    public void CriticalWhenLessThan24hAndLowAdherence()
     {
         var now = DateTime.UtcNow;
         var c = NewBaselineCommitment(now);
@@ -35,7 +35,7 @@ public class CommitmentRiskTests
     }
 
     [Fact]
-    public void AtRisk_when_less_than_24h_and_moderate_adherence()
+    public void AtRiskWhenLessThan24hAndModerateAdherence()
     {
         var now = DateTime.UtcNow;
         var c = NewBaselineCommitment(now);
@@ -46,7 +46,7 @@ public class CommitmentRiskTests
     }
 
     [Fact]
-    public void OnTrack_when_high_adherence()
+    public void OnTrackWhenHighAdherence()
     {
         var now = DateTime.UtcNow;
         var c = NewBaselineCommitment(now);
@@ -57,7 +57,7 @@ public class CommitmentRiskTests
     }
 
     [Fact]
-    public void SlightlyBehind_when_medium_high_adherence()
+    public void SlightlyBehindWhenMediumHighAdherence()
     {
         var now = DateTime.UtcNow;
         var c = NewBaselineCommitment(now);
@@ -68,7 +68,7 @@ public class CommitmentRiskTests
     }
 
     [Fact]
-    public void Behind_when_half_adherence()
+    public void BehindWhenHalfAdherence()
     {
         var now = DateTime.UtcNow;
         var c = NewBaselineCommitment(now);
@@ -79,7 +79,7 @@ public class CommitmentRiskTests
     }
 
     [Fact]
-    public void AtRisk_general_when_low_adherence_and_more_than_day_left()
+    public void AtRiskGeneralWhenLowAdherenceAndMoreThanDayLeft()
     {
         var now = DateTime.UtcNow;
         var c = NewBaselineCommitment(now);
@@ -90,7 +90,7 @@ public class CommitmentRiskTests
     }
 
     [Fact]
-    public void DecisionNeeded_overrides_other_logic()
+    public void DecisionNeededOverridesOtherLogic()
     {
         var now = DateTime.UtcNow;
         var c = NewBaselineCommitment(now);
