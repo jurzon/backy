@@ -37,11 +37,18 @@ public class StripePaymentService : IPaymentService
 
     public async Task<PaymentIntentLog> CreateFailurePaymentIntentAsync(Commitment commitment, CancellationToken ct = default)
     {
-        // Idempotency: look for existing PaymentIntentLog for this commitment in created/processing state
-        var existing = await _db.PaymentIntentLogs.FirstOrDefaultAsync(p => p.CommitmentId == commitment.Id && p.Status != "succeeded", ct);
+        // Attempt number based on existing logs for this commitment
+        var existingSucceeded = await _db.PaymentIntentLogs
+            .Where(p => p.CommitmentId == commitment.Id)
+            .OrderByDescending(p => p.AttemptNumber)
+            .FirstOrDefaultAsync(ct);
+        var attempt = (existingSucceeded?.AttemptNumber ?? 0) + 1;
+        var idempotencyKey = $"fail-{commitment.Id}-a{attempt}";
+
+        // If a log already exists for this attempt, return it
+        var existing = await _db.PaymentIntentLogs.FirstOrDefaultAsync(p => p.CommitmentId == commitment.Id && p.AttemptNumber == attempt, ct);
         if (existing != null) return existing;
 
-        var idempotencyKey = $"fail-{commitment.Id}"; // TODO sequence
         string paymentIntentId;
         string status = "created";
         if (_stripeConfigured)
@@ -60,14 +67,13 @@ public class StripePaymentService : IPaymentService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Stripe PaymentIntent creation failed for {CommitmentId}", commitment.Id);
-                paymentIntentId = idempotencyKey + "-sim"; // fallback
+                _logger.LogError(ex, "Stripe PaymentIntent creation failed for {CommitmentId} attempt {Attempt}", commitment.Id, attempt);
+                paymentIntentId = idempotencyKey + "-sim";
                 status = "failed";
             }
         }
         else
         {
-            // Simulated ID in absence of API key
             paymentIntentId = idempotencyKey + "-local";
         }
 
@@ -78,10 +84,22 @@ public class StripePaymentService : IPaymentService
             AmountMinor = commitment.StakeAmountMinor,
             Currency = commitment.Currency,
             Status = status,
-            AttemptNumber = 1
+            AttemptNumber = attempt,
+            UpdatedAtUtc = DateTime.UtcNow
         };
+
         _db.PaymentIntentLogs.Add(log);
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException dup)
+        {
+            _logger.LogWarning(dup, "Duplicate payment intent log for commitment {CommitmentId} attempt {Attempt}", commitment.Id, attempt);
+            // load existing and return (another thread won)
+            var existingDup = await _db.PaymentIntentLogs.FirstAsync(p => p.CommitmentId == commitment.Id && p.AttemptNumber == attempt, ct);
+            return existingDup;
+        }
         return log;
     }
 

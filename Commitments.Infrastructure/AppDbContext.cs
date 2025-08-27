@@ -41,6 +41,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.CommitmentId);
             e.Property(x => x.StripePaymentIntentId).HasMaxLength(200);
+            e.HasIndex(x => new { x.CommitmentId, x.AttemptNumber }).IsUnique();
         });
 
         b.Entity<AuditLog>(e =>

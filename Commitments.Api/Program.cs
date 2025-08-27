@@ -14,8 +14,16 @@ using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authorization;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -39,18 +47,16 @@ builder.Services.AddAuthorization();
 var conn = builder.Configuration.GetConnectionString("Postgres") ?? "Host=localhost;Username=commitments;Password=commitments;Database=commitments";
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(conn));
 
-// Stripe API Key (dev: can be empty placeholder)
 var stripeKey = builder.Configuration.GetValue<string>("Stripe:ApiKey");
 var stripeWebhookSecret = builder.Configuration.GetValue<string>("Stripe:WebhookSecret");
 if (!string.IsNullOrWhiteSpace(stripeKey)) StripeConfiguration.ApiKey = stripeKey;
 
-// Hangfire configuration
 builder.Services.AddHangfire(config =>
     config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
           .UseSimpleAssemblyNameTypeSerializer()
           .UseRecommendedSerializerSettings()
           .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(conn)));
-
+ 
 builder.Services.AddHangfireServer();
 
 builder.Services.AddSingleton<IClock, Commitments.Domain.Abstractions.SystemClock>();
@@ -78,6 +84,7 @@ if (app.Environment.IsDevelopment())
     app.UseHangfireDashboard("/hangfire");
 }
 
+app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
 
