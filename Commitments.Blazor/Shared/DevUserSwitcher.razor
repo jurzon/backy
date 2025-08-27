@@ -1,0 +1,25 @@
+@using CommitmentsBlazor.Services
+@inject DevAuthStateProvider Auth
+
+<div class="mt-3 p-2 border rounded bg-light">
+    <strong>User:</strong> @_name
+    <div class="mt-2">
+        <button class="btn btn-sm btn-outline-primary me-2" @onclick="SwitchToDev">Dev</button>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="SwitchToAlt">Alt</button>
+    </div>
+</div>
+
+@code {
+    private const string DevId = "11111111-1111-1111-1111-111111111111";
+    private const string AltId = "22222222-2222-2222-2222-222222222222";
+    private string _name = "dev";
+
+    private void SwitchToDev() => Switch("dev", DevId);
+    private void SwitchToAlt() => Switch("alt", AltId);
+
+    private void Switch(string name, string id)
+    {
+        Auth.SetUser(name, Guid.Parse(id));
+        _name = name;
+    }
+}

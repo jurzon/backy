@@ -1,5 +1,6 @@
 @page "/commitments/create"
 @inject HttpClient Http
+@inject AuthenticationStateProvider AuthProvider
 
 <h3>Create Commitment</h3>
 
@@ -39,7 +40,7 @@
         <label class="form-label">Time Of Day (HH:mm)</label>
         <InputText class="form-control" @bind-Value="_model.TimeOfDay" />
     </div>
-    <button class="btn btn-primary" disabled="@_submitting">Create</button>
+    <button class="btn btn-primary" disabled="@_submitting || _userId == Guid.Empty">Create</button>
 </EditForm>
 
 @if (_error != null)
@@ -48,7 +49,7 @@
 }
 
 @code {
-    private Guid _userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private Guid _userId;
     private bool _submitting; private string? _error; private Guid? _successId;
 
     private CommitmentForm _model = new()
@@ -60,6 +61,13 @@
         StartDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(1)),
         TimeOfDay = "09:00"
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var idClaim = state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (idClaim != null) _userId = Guid.Parse(idClaim);
+    }
 
     private async Task OnSubmit()
     {

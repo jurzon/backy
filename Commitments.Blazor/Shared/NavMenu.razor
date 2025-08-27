@@ -1,34 +1,20 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">Commitments</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
     </div>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="commitments">
-                <span class="oi oi-list-rich" aria-hidden="true"></span> Commitments
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="commitments/create">
-                <span class="oi oi-plus" aria-hidden="true"></span> Create
-            </NavLink>
-        </div>
-    </nav>
+<div class="collapse d-sm-inline-flex flex-column">
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/">Home</NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/commitments">Commitments</NavLink>
+        </li>
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="/commitments/create">Create</NavLink>
+        </li>
+    </ul>
+    <DevUserSwitcher />
 </div>
-
-@code {
-    private bool collapseNavMenu = true;
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-    private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
-}

@@ -1,6 +1,7 @@
 @page "/commitments/{Id:guid}"
 @using CommitmentsBlazor.Services
 @inject ApiClient Api
+@inject AuthenticationStateProvider AuthProvider
 
 <h3>Commitment Detail</h3>
 @if (_loading)
@@ -23,13 +24,16 @@ else
     </div>
     <p><strong>Deadline:</strong> @_c.DeadlineUtc.ToString("u") | <strong>Progress:</strong> @_c.ProgressPercent% | <strong>Risk:</strong> @_c.RiskBadge</p>
 
-    <div class="mb-3">
-        <button class="btn btn-sm btn-primary me-2" @onclick="ShowCheckInModal">New Check-In</button>
-        <button class="btn btn-sm btn-warning me-2" @onclick="@(() => ConfirmAction("Cancel", Api.CancelAsync))">Cancel</button>
-        <button class="btn btn-sm btn-success me-2" @onclick="@(() => ConfirmAction("Complete", Api.CompleteAsync))">Complete</button>
-        <button class="btn btn-sm btn-danger me-2" @onclick="@(() => ConfirmAction("Fail", Api.FailAsync))">Fail</button>
-        <button class="btn btn-sm btn-outline-danger" @onclick="@(() => ConfirmAction("Delete", Api.DeleteAsync))">Delete</button>
-    </div>
+    @if (_userId != Guid.Empty)
+    {
+        <div class="mb-3">
+            <button class="btn btn-sm btn-primary me-2" @onclick="ShowCheckInModal">New Check-In</button>
+            <button class="btn btn-sm btn-warning me-2" @onclick="@(() => ConfirmAction("Cancel", Api.CancelAsync))">Cancel</button>
+            <button class="btn btn-sm btn-success me-2" @onclick="@(() => ConfirmAction("Complete", Api.CompleteAsync))">Complete</button>
+            <button class="btn btn-sm btn-danger me-2" @onclick="@(() => ConfirmAction("Fail", Api.FailAsync))">Fail</button>
+            <button class="btn btn-sm btn-outline-danger" @onclick="@(() => ConfirmAction("Delete", Api.DeleteAsync))">Delete</button>
+        </div>
+    }
 
     @if (_actionMessage != null)
     {
@@ -127,11 +131,14 @@ else
     private CheckInForm _checkIn = new();
     private Func<Guid, Task<HttpResponseMessage>>? _confirmAction;
     private string? _confirmActionLabel;
+    private Guid _userId;
 
     private class CheckInForm { public string? Note { get; set; } }
 
     protected override async Task OnParametersSetAsync()
     {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        _userId = Guid.TryParse(state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id) ? id : Guid.Empty;
         await Load();
     }
 
