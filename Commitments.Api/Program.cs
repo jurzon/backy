@@ -7,11 +7,19 @@ using Commitments.Domain.Abstractions;
 using Commitments.Api.Payments;
 using Commitments.Api.Notifications;
 using Stripe;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.Extensions.Options;
+using System.Text.Encodings.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddAuthentication("Basic").AddScheme<AuthenticationSchemeOptions, BasicAuthHandler>("Basic", _ => { });
+builder.Services.AddAuthorization();
 
 var conn = builder.Configuration.GetConnectionString("Postgres") ?? "Host=localhost;Username=commitments;Password=commitments;Database=commitments";
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(conn));
@@ -30,7 +38,7 @@ builder.Services.AddHangfire(config =>
 
 builder.Services.AddHangfireServer();
 
-builder.Services.AddSingleton<IClock, SystemClock>();
+builder.Services.AddSingleton<IClock, Commitments.Domain.Abstractions.SystemClock>();
 builder.Services.AddScoped<IReminderScheduler, ReminderScheduler>();
 builder.Services.AddScoped<IGraceExpiryScanner, GraceExpiryScanner>();
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
@@ -54,6 +62,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
     app.UseHangfireDashboard("/hangfire");
 }
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
 
@@ -110,5 +121,49 @@ public static class PaymentRetryJob
         using var scope = sp.CreateScope();
         var worker = scope.ServiceProvider.GetRequiredService<IPaymentRetryWorker>();
         await worker.RunAsync();
+    }
+}
+
+// Basic dev-only authentication handler
+public class BasicAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+{
+    private static readonly string DevUser = "dev";
+    private static readonly string DevPassword = "dev";
+    private static readonly Guid DevUserId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    public BasicAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock)
+        : base(options, logger, encoder, clock) { }
+
+    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    {
+        if (!Request.Headers.ContainsKey("Authorization"))
+            return Task.FromResult(AuthenticateResult.NoResult());
+        try
+        {
+            var header = Request.Headers["Authorization"].ToString();
+            if (!header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+                return Task.FromResult(AuthenticateResult.Fail("Invalid scheme"));
+            var encoded = header.Substring("Basic ".Length).Trim();
+            var creds = Encoding.UTF8.GetString(Convert.FromBase64String(encoded));
+            var parts = creds.Split(':');
+            if (parts.Length != 2) return Task.FromResult(AuthenticateResult.Fail("Invalid basic token"));
+            if (parts[0] == DevUser && parts[1] == DevPassword)
+            {
+                var claims = new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, DevUserId.ToString()),
+                    new Claim(ClaimTypes.Name, DevUser)
+                };
+                var identity = new ClaimsIdentity(claims, Scheme.Name);
+                var principal = new ClaimsPrincipal(identity);
+                var ticket = new AuthenticationTicket(principal, Scheme.Name);
+                return Task.FromResult(AuthenticateResult.Success(ticket));
+            }
+            return Task.FromResult(AuthenticateResult.Fail("Bad credentials"));
+        }
+        catch (Exception ex)
+        {
+            return Task.FromResult(AuthenticateResult.Fail(ex));
+        }
     }
 }
