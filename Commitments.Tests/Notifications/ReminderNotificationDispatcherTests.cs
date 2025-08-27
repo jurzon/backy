@@ -19,7 +19,7 @@ public class ReminderNotificationDispatcherTests
 
     private static Commitment SeedCommitment(AppDbContext db, DateTime deadline)
     {
-        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2), new TimeOnly(9,0), "UTC", 1);
+        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2), new TimeOnly(9, 0), "UTC", 1);
         var c = Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadline, "UTC", schedule);
         db.Commitments.Add(c);
         db.SaveChanges();

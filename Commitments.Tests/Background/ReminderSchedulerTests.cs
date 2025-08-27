@@ -33,7 +33,7 @@ public class ReminderSchedulerTests
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };
-        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date), new TimeOnly(9,0), "UTC", 1);
+        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date), new TimeOnly(9, 0), "UTC", 1);
         var commitment = SeedCommitment(db, schedule);
         var scheduler = new ReminderScheduler(db, clock);
 
@@ -47,7 +47,7 @@ public class ReminderSchedulerTests
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };
-        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date), new TimeOnly(9,0), "UTC", 1);
+        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date), new TimeOnly(9, 0), "UTC", 1);
         var commitment = SeedCommitment(db, schedule);
         var scheduler = new ReminderScheduler(db, clock);
 
@@ -64,7 +64,7 @@ public class ReminderSchedulerTests
     {
         using var db = CreateDb();
         var clock = new FakeClock { UtcNow = DateTime.UtcNow };
-        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date), new TimeOnly(9,0), "UTC", 1);
+        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date), new TimeOnly(9, 0), "UTC", 1);
         var commitment = SeedCommitment(db, schedule);
         commitment.Fail();
         db.SaveChanges();

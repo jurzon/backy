@@ -16,7 +16,7 @@ public class GraceExpiryScannerTests
     private static Commitment NewCommitment(DateTime now, DateTime deadlineUtc)
     {
         var startDate = DateOnly.FromDateTime(now.Date).AddDays(-2);
-        var schedule = Schedule.CreateDaily(startDate, new TimeOnly(9,0), "UTC", 1);
+        var schedule = Schedule.CreateDaily(startDate, new TimeOnly(9, 0), "UTC", 1);
         return Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadlineUtc, "UTC", schedule);
     }
 

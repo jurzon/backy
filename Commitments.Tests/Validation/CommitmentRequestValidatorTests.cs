@@ -23,7 +23,7 @@ public class CommitmentRequestValidatorTests
                 NthWeek: null,
                 NthWeekday: null,
                 StartDate: DateOnly.FromDateTime(DateTime.UtcNow.Date),
-                TimeOfDay: new TimeOnly(9,0)
+                TimeOfDay: new TimeOnly(9, 0)
             )
         );
         mutate?.Invoke(req);

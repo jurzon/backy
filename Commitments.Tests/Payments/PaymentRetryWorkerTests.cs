@@ -27,7 +27,7 @@ public class PaymentRetryWorkerTests
             Status = "failed",
             AttemptNumber = attempt,
             LastErrorCode = errorCode,
-            UpdatedAtUtc = DateTime.UtcNow.AddDays(-2) // old enough for retry
+            UpdatedAtUtc = DateTime.UtcNow.AddDays(-2), // old enough for retry
         };
 
     [Fact]

@@ -9,7 +9,7 @@ public class CommitmentTransitionTests
     private static Commitment NewActive(DateTime deadlineUtc)
     {
         var startDate = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2);
-        var schedule = Schedule.CreateDaily(startDate, new TimeOnly(8,0), "UTC", 1);
+        var schedule = Schedule.CreateDaily(startDate, new TimeOnly(8, 0), "UTC", 1);
         return Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadlineUtc, "UTC", schedule);
     }
 
