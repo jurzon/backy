@@ -33,6 +33,7 @@ builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IReminderScheduler, ReminderScheduler>();
 builder.Services.AddScoped<IGraceExpiryScanner, GraceExpiryScanner>();
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
+builder.Services.AddScoped<IPaymentRetryWorker, PaymentRetryWorker>();
 
 var app = builder.Build();
 
@@ -93,5 +94,6 @@ app.MapPost("/webhooks/stripe", async (HttpRequest request, IPaymentService paym
 // Recurring jobs
 RecurringJob.AddOrUpdate<ReminderHorizonJob>("reminder-horizon", job => job.RunAsync(), "*/15 * * * *");
 RecurringJob.AddOrUpdate<GraceExpiryJob>("grace-expiry", job => job.RunAsync(), "*/5 * * * *");
+RecurringJob.AddOrUpdate("payment-retry", () => app.Services.CreateScope().ServiceProvider.GetRequiredService<IPaymentRetryWorker>().RunAsync(), Cron.Daily);
 
 app.Run();
