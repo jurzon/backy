@@ -15,6 +15,8 @@ using System.Text.Encodings.Web;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Serilog;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Resources;
 
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
@@ -67,6 +69,31 @@ builder.Services.AddScoped<IPaymentRetryWorker, PaymentRetryWorker>();
 // Notifications
 builder.Services.AddScoped<INotificationSender, ConsoleNotificationSender>();
 builder.Services.AddScoped<IReminderNotificationDispatcher, ReminderNotificationDispatcher>();
+
+// Observability: OpenTelemetry (enabled via config Observability:Tracing:Enabled=true)
+var tracingEnabled = builder.Configuration.GetValue<bool>("Observability:Tracing:Enabled");
+if (tracingEnabled)
+{
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(r => r.AddService("commitments-api", serviceVersion: "1.0.0"))
+        .WithTracing(t =>
+        {
+            t.AddAspNetCoreInstrumentation();
+            t.AddHttpClientInstrumentation();
+            t.AddEntityFrameworkCoreInstrumentation(options =>
+            {
+                options.SetDbStatementForText = true;
+                options.SetDbStatementForStoredProcedure = true;
+            });
+            t.AddSource("Hangfire");
+            // Exporters
+            var otlpEndpoint = builder.Configuration.GetValue<string>("Observability:Tracing:OtlpEndpoint");
+            if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+                t.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+            else
+                t.AddConsoleExporter();
+        });
+}
 
 var app = builder.Build();
 
