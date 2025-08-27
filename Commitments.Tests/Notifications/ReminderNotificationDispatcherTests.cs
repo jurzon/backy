@@ -56,5 +56,31 @@ public class ReminderNotificationDispatcherTests
         var rem = db.ReminderEvents.Single();
         rem.Status.Should().Be("pending");
         rem.ScheduledForUtc.Should().BeAfter(clock.UtcNow); // rescheduled
+        rem.Type.Should().Contain("d=1");
+    }
+
+    [Fact]
+    public async Task After_quiet_end_sends()
+    {
+        using var db = CreateDb();
+        var start = DateTime.UtcNow.Date.AddHours(23); // inside quiet 23:00
+        var clock = new FakeClock { UtcNow = start };
+        var commitment = SeedCommitment(db, clock.UtcNow.AddDays(5));
+        db.ReminderEvents.Add(new ReminderEvent { CommitmentId = commitment.Id, ScheduledForUtc = start.AddMinutes(-1), Type = "reminder.checkin_due" });
+        db.SaveChanges();
+        var sender = new InMemoryNotificationSender();
+        var dispatcher = new ReminderNotificationDispatcher(db, sender, clock);
+        // First dispatch defers
+        await dispatcher.DispatchAsync();
+        var rem = db.ReminderEvents.Single();
+        rem.Status.Should().Be("pending");
+        rem.Type.Should().Contain("d=1");
+        rem.ScheduledForUtc.Should().BeAfter(clock.UtcNow);
+        // Advance clock to deferred time (quiet end boundary)
+        clock.UtcNow = rem.ScheduledForUtc;
+        // Second dispatch sends
+        await dispatcher.DispatchAsync();
+        rem.Status.Should().Be("sent");
+        sender.Sent.Should().HaveCount(1);
     }
 }

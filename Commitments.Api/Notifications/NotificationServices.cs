@@ -36,8 +36,9 @@ public interface IReminderNotificationDispatcher
 
 public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender sender, IClock clock) : IReminderNotificationDispatcher
 {
-    private const int QuietStartHour = 22; // 22:00
-    private const int QuietEndHour = 7;   // 07:00 next day
+    private const int DefaultQuietStartHour = 22; // 22:00
+    private const int DefaultQuietEndHour = 7;   // 07:00
+    private const int MaxDeferrals = 3; // safety: after 3 quiet deferrals send anyway
 
     public async Task DispatchAsync(CancellationToken ct = default)
     {
@@ -45,7 +46,7 @@ public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender
         var reminders = await db.ReminderEvents
             .Where(r => r.Status == "pending" && r.ScheduledForUtc <= now)
             .OrderBy(r => r.ScheduledForUtc)
-            .Take(100)
+            .Take(200)
             .ToListAsync(ct);
         if (reminders.Count == 0) return;
 
@@ -60,20 +61,20 @@ public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender
                 rem.ProcessedAtUtc = now;
                 continue;
             }
-            var tz = commitment.Timezone ?? "UTC"; // timezone placeholder; treat as UTC until TZ conversion implemented
-            // For now we interpret quiet hours in commitment timezone treated as UTC.
-            var local = now; // TODO convert using TZ database
-            var inQuiet = IsInQuiet(local);
-            if (inQuiet)
+
+            // Derive local time (placeholder: treat timezone as UTC)
+            var localNow = now; // TODO real TZ conversion
+            var (startHour, endHour) = GetQuietWindow(commitment.UserId); // future per-user customization
+            var inQuiet = IsInQuiet(localNow, startHour, endHour);
+
+            if (inQuiet && GetDeferralCount(rem) < MaxDeferrals)
             {
-                // defer until quiet end
-                var quietEndToday = new DateTime(local.Year, local.Month, local.Day, QuietEndHour, 0,0, DateTimeKind.Utc);
-                if (local.Hour >= QuietStartHour) // after start -> quiet end next day
-                    quietEndToday = quietEndToday.AddDays(1);
-                rem.ScheduledForUtc = quietEndToday;
-                // keep status pending
+                var nextBoundary = ComputeNextQuietEnd(localNow, startHour, endHour);
+                rem.ScheduledForUtc = nextBoundary;
+                SetDeferralCount(rem, GetDeferralCount(rem) + 1);
                 continue;
             }
+
             await sender.SendAsync(commitment.UserId, "console", rem.Type, $"Reminder for commitment {commitment.Goal}", ct);
             rem.Status = "sent";
             rem.ProcessedAtUtc = now;
@@ -81,11 +82,57 @@ public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender
         await db.SaveChangesAsync(ct);
     }
 
-    private static bool IsInQuiet(DateTime local)
+    private static (int startHour, int endHour) GetQuietWindow(Guid userId)
+        => (DefaultQuietStartHour, DefaultQuietEndHour);
+
+    private static bool IsInQuiet(DateTime local, int startHour, int endHour)
     {
-        if (local.Hour >= QuietStartHour) return true; // 22:00 -> 23:59
-        if (local.Hour < QuietEndHour) return true;    // 00:00 -> 06:59
+        if (startHour < endHour)
+        {
+            // Simple same-day window (not used here but future-proof)
+            return local.Hour >= startHour && local.Hour < endHour;
+        }
+        // Overnight window (e.g., 22 -> 7)
+        if (local.Hour >= startHour) return true; // 22..23
+        if (local.Hour < endHour) return true;    // 0..6
         return false;
+    }
+
+    private static DateTime ComputeNextQuietEnd(DateTime local, int startHour, int endHour)
+    {
+        if (startHour < endHour)
+        {
+            var endToday = new DateTime(local.Year, local.Month, local.Day, endHour, 0, 0, DateTimeKind.Utc);
+            if (local < endToday) return endToday;
+            return endToday.AddDays(1);
+        }
+        // overnight window
+        if (local.Hour >= startHour)
+        {
+            // send at endHour next day
+            var nextDayEnd = new DateTime(local.Year, local.Month, local.Day, endHour, 0, 0, DateTimeKind.Utc).AddDays(1);
+            return nextDayEnd;
+        }
+        // before end hour same morning
+        return new DateTime(local.Year, local.Month, local.Day, endHour, 0, 0, DateTimeKind.Utc);
+    }
+
+    // Store deferral count encoded in Type suffix (simple, avoids schema change) e.g., originalType|d=2
+    private static int GetDeferralCount(ReminderEvent rem)
+    {
+        var parts = rem.Type.Split('|');
+        foreach (var p in parts)
+        {
+            if (p.StartsWith("d=", StringComparison.OrdinalIgnoreCase) && int.TryParse(p[2..], out var n))
+                return n;
+        }
+        return 0;
+    }
+
+    private static void SetDeferralCount(ReminderEvent rem, int count)
+    {
+        var baseType = rem.Type.Split('|')[0];
+        rem.Type = count == 0 ? baseType : $"{baseType}|d={count}";
     }
 }
 
