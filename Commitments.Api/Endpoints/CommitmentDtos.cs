@@ -45,7 +45,7 @@ public static class CommitmentMappings
         var total = (c.DeadlineUtc - c.CreatedAtUtc).TotalSeconds;
         var elapsed = Math.Clamp((now - c.CreatedAtUtc).TotalSeconds, 0, total <= 0 ? 1 : total);
         var progress = total <= 0 ? 100 : Math.Min(100, (elapsed / total) * 100);
-        var risk = ComputeRisk(c, now, progress);
+        var risk = c.ComputeRiskBadge(now);
         return new CommitmentSummaryResponse(
             c.Id,
             c.Goal,
@@ -56,19 +56,6 @@ public static class CommitmentMappings
             Math.Round(progress, 2),
             risk
         );
-    }
-
-    private static string ComputeRisk(Commitment c, DateTime now, double progressPercent)
-    {
-        if (c.Status == CommitmentStatus.DecisionNeeded) return "DecisionNeeded";
-        if (c.Status != CommitmentStatus.Active) return c.Status.ToString();
-        if (c.Schedule == null) return "OnTrack";
-        var expected = c.Schedule.CountOccurrencesUpTo(now, c.DeadlineUtc);
-        var actual = c.CheckIns.Count;
-        double ratio = expected == 0 ? 1 : (double)actual / expected;
-        var timeRemaining = c.DeadlineUtc - now;
-        if (timeRemaining.TotalHours < 48 || (progressPercent > 50 && ratio < 0.25)) return "AtRisk";
-        return "OnTrack";
     }
 
     public static CheckInResponse ToResponse(this CheckIn ci) => new(ci.Id, ci.OccurredAtUtc, ci.Note, ci.PhotoUrl);

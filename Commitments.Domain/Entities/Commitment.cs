@@ -123,4 +123,27 @@ public class Commitment
         UpdatedAtUtc = DateTime.UtcNow;
         return ci;
     }
+
+    public string ComputeRiskBadge(DateTime nowUtc)
+    {
+        if (Status == CommitmentStatus.DecisionNeeded) return "DecisionNeeded";
+        if (Status != CommitmentStatus.Active) return Status.ToString();
+        if (Schedule == null) return "Unknown";
+
+        // Expected occurrences up to now
+        var expected = Schedule.CountOccurrencesUpTo(nowUtc, DeadlineUtc);
+        var actual = CheckIns.Count;
+        var adherence = expected == 0 ? 1.0 : (double)actual / expected;
+        var timeRemaining = DeadlineUtc - nowUtc;
+
+        // Escalate if deadline near and adherence low
+        if (timeRemaining.TotalHours <= 24 && adherence < 0.5) return "Critical";
+        if (timeRemaining.TotalHours <= 24 && adherence < 0.75) return "AtRisk";
+
+        // General thresholds
+        if (adherence >= 0.9) return "OnTrack";
+        if (adherence >= 0.7) return "SlightlyBehind";
+        if (adherence >= 0.5) return "Behind";
+        return "AtRisk";
+    }
 }
