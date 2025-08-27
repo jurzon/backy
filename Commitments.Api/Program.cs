@@ -98,7 +98,17 @@ app.MapPost("/webhooks/stripe", async (HttpRequest request, IPaymentService paym
 // Recurring jobs
 RecurringJob.AddOrUpdate<ReminderHorizonJob>("reminder-horizon", job => job.RunAsync(), "*/15 * * * *");
 RecurringJob.AddOrUpdate<GraceExpiryJob>("grace-expiry", job => job.RunAsync(), "*/5 * * * *");
-RecurringJob.AddOrUpdate("payment-retry", () => app.Services.CreateScope().ServiceProvider.GetRequiredService<IPaymentRetryWorker>().RunAsync(), Cron.Daily);
+RecurringJob.AddOrUpdate("payment-retry", () => PaymentRetryJob.Run(app.Services), Cron.Daily);
 RecurringJob.AddOrUpdate<ReminderNotificationJob>("reminder-dispatch", job => job.RunAsync(), "*/10 * * * *");
 
 app.Run();
+
+public static class PaymentRetryJob
+{
+    public static async Task Run(IServiceProvider sp)
+    {
+        using var scope = sp.CreateScope();
+        var worker = scope.ServiceProvider.GetRequiredService<IPaymentRetryWorker>();
+        await worker.RunAsync();
+    }
+}

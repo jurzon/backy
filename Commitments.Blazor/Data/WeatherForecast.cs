@@ -1,4 +1,4 @@
-namespace Commitments.Blazor.Data;
+namespace CommitmentsBlazor.Data;
 
 public class WeatherForecast
 {

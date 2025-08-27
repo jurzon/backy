@@ -1,0 +1,66 @@
+﻿@page "/commitments"
+@using CommitmentsBlazor.Services
+@inject ApiClient Api
+
+<h3>Commitments</h3>
+
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else if (_error != null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else
+{
+    <button class="btn btn-sm btn-primary mb-2" @onclick="Reload">Reload</button>
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>Goal</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th>Risk</th>
+                <th>Deadline</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var c in _commitments)
+        {
+            <tr>
+                <td><a href="commitments/@c.Id">@c.Goal</a></td>
+                <td>@c.Status</td>
+                <td>@c.ProgressPercent%</td>
+                <td>@c.RiskBadge</td>
+                <td>@c.DeadlineUtc.ToString("u")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private bool _loading = true;
+    private string? _error;
+    private IReadOnlyList<ApiClient.CommitmentSummary> _commitments = Array.Empty<ApiClient.CommitmentSummary>();
+    private Guid _userId = Guid.Parse("11111111-1111-1111-1111-111111111111"); // temp dev user
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Reload() => await Load();
+
+    private async Task Load()
+    {
+        _loading = true; _error = null;
+        try
+        {
+            _commitments = await Api.GetCommitmentsAsync(_userId);
+        }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _loading = false; }
+    }
+}

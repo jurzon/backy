@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Commitments.Blazor.Data;
+using CommitmentsBlazor.Data;
+using CommitmentsBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<WeatherForecastService>();
+builder.Services.AddHttpClient<ApiClient>(client =>
+{
+    // Assume API hosted at same origin reverse-proxied; adjust if separate port.
+    client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("ApiBase") ?? "https://localhost:5001/");
+});
 
 var app = builder.Build();
 

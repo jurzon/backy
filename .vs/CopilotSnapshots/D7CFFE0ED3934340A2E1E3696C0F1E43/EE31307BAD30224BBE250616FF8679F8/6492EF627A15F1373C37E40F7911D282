@@ -1,0 +1,43 @@
+﻿@page "/commitments/{Id:guid}"
+@using CommitmentsBlazor.Services
+@inject ApiClient Api
+
+<h3>Commitment Detail</h3>
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else if (_error != null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_c == null)
+{
+    <p>Not found.</p>
+}
+else
+{
+    <dl class="row">
+        <dt class="col-sm-3">Goal</dt><dd class="col-sm-9">@_c.Goal</dd>
+        <dt class="col-sm-3">Status</dt><dd class="col-sm-9">@_c.Status</dd>
+        <dt class="col-sm-3">Progress</dt><dd class="col-sm-9">@_c.ProgressPercent%</dd>
+        <dt class="col-sm-3">Risk</dt><dd class="col-sm-9">@_c.RiskBadge</dd>
+        <dt class="col-sm-3">Deadline</dt><dd class="col-sm-9">@_c.DeadlineUtc.ToString("u")</dd>
+    </dl>
+    <a class="btn btn-secondary" href="/commitments">Back</a>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    private bool _loading = true;
+    private string? _error;
+    private ApiClient.CommitmentSummary? _c;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true; _error = null;
+        try { _c = await Api.GetCommitmentAsync(Id); }
+        catch (Exception ex) { _error = ex.Message; }
+        finally { _loading = false; }
+    }
+}
