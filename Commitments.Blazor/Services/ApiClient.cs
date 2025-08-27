@@ -16,13 +16,16 @@ public class ApiClient
         return doc.items ?? new List<CommitmentSummary>();
     }
 
-    public async Task<CommitmentSummary?> GetCommitmentAsync(Guid id, CancellationToken ct = default)
-        => await _http.GetFromJsonAsync<CommitmentSummary>($"commitments/{id}", ct);
+    public Task<CommitmentSummary?> GetCommitmentAsync(Guid id, CancellationToken ct = default)
+        => _http.GetFromJsonAsync<CommitmentSummary>($"commitments/{id}", ct);
 
     public Task<HttpResponseMessage> CancelAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/cancel", null);
     public Task<HttpResponseMessage> CompleteAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/complete", null);
     public Task<HttpResponseMessage> FailAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/fail", null);
     public Task<HttpResponseMessage> DeleteAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/delete", null);
+
+    public Task<HttpResponseMessage> CreateCheckInAsync(Guid id, string? note, string? photoUrl = null)
+        => _http.PostAsJsonAsync($"commitments/{id}/checkins", new { note, photoUrl });
 
     private class ResponseWrapper { public List<CommitmentSummary>? items { get; set; } }
 }

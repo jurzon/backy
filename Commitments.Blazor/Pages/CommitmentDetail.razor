@@ -28,13 +28,22 @@ else
         <button class="btn btn-sm btn-warning me-2" disabled="@_busy" @onclick="() => DoAction(Api.CancelAsync)">Cancel</button>
         <button class="btn btn-sm btn-success me-2" disabled="@_busy" @onclick="() => DoAction(Api.CompleteAsync)">Complete</button>
         <button class="btn btn-sm btn-danger me-2" disabled="@_busy" @onclick="() => DoAction(Api.FailAsync)">Fail</button>
-        <button class="btn btn-sm btn-outline-danger" disabled="@_busy" @onclick="() => DoAction(Api.DeleteAsync)">Delete</button>
+        <button class="btn btn-sm btn-outline-danger me-2" disabled="@_busy" @onclick="() => DoAction(Api.DeleteAsync)">Delete</button>
     </div>
+    <h5>Create Check-In</h5>
+    <EditForm Model="_checkIn" OnValidSubmit="CreateCheckIn">
+        <InputTextArea class="form-control mb-2" @bind-Value="_checkIn.Note" placeholder="Note (optional)" />
+        <button class="btn btn-primary btn-sm" disabled="@_busy">Add Check-In</button>
+    </EditForm>
+    @if (_checkInMessage != null)
+    {
+        <div class="alert alert-secondary mt-2">@_checkInMessage</div>
+    }
     @if (_actionMessage != null)
     {
-        <div class="alert alert-info">@_actionMessage</div>
+        <div class="alert alert-info mt-2">@_actionMessage</div>
     }
-    <a class="btn btn-secondary" href="/commitments">Back</a>
+    <a class="btn btn-secondary mt-3" href="/commitments">Back</a>
 }
 
 @code {
@@ -43,7 +52,12 @@ else
     private bool _busy;
     private string? _error;
     private string? _actionMessage;
+    private string? _checkInMessage;
     private ApiClient.CommitmentSummary? _c;
+
+    private CheckInForm _checkIn = new();
+
+    private class CheckInForm { public string? Note { get; set; } }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -52,7 +66,7 @@ else
 
     private async Task Load()
     {
-        _loading = true; _error = null; _actionMessage = null;
+        _loading = true; _error = null; _actionMessage = null; _checkInMessage = null;
         try { _c = await Api.GetCommitmentAsync(Id); }
         catch (Exception ex) { _error = ex.Message; }
         finally { _loading = false; }
@@ -67,7 +81,6 @@ else
             if (resp.IsSuccessStatusCode)
             {
                 _actionMessage = "Action OK";
-                // refresh commitment
                 _c = await Api.GetCommitmentAsync(Id);
             }
             else
@@ -78,6 +91,30 @@ else
         catch (Exception ex)
         {
             _actionMessage = ex.Message;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task CreateCheckIn()
+    {
+        _busy = true; _checkInMessage = null;
+        try
+        {
+            var resp = await Api.CreateCheckInAsync(Id, _checkIn.Note);
+            if (resp.IsSuccessStatusCode)
+            {
+                _checkInMessage = "Check-in created";
+                _checkIn = new();
+                _c = await Api.GetCommitmentAsync(Id);
+            }
+            else
+            {
+                _checkInMessage = "Failed: " + await resp.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _checkInMessage = ex.Message;
         }
         finally { _busy = false; }
     }
