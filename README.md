@@ -106,16 +106,43 @@ Swagger at: http://localhost:8080/swagger
 ConnectionStrings__Postgres=Host=localhost;Username=commitments;Password=commitments;Database=commitments
 ```
 
-## 12. Troubleshooting
+## 12. Manual Blazor Admin UI Testing
+The server?side Blazor admin scaffold (Phase 9) provides a basic list/detail/create flow.
+
+1. Start API (port assumed 5000):
+```
+dotnet run --project Commitments.Api --urls http://localhost:5000
+```
+2. Start Blazor UI (separate terminal):
+```
+# Option A: use API default (configure ApiBase)
+set ApiBase=http://localhost:5000/
+# PowerShell: $env:ApiBase="http://localhost:5000/"
+# then run
+dotnet run --project Commitments.Blazor --urls http://localhost:5100
+```
+3. Open browser: http://localhost:5100
+4. Navigate with left nav:
+   - Home
+   - Commitments (lists commitments for hardcoded dev UserId `11111111-1111-1111-1111-111111111111`)
+   - Create (submit form, then follow success link to detail)
+5. Detail page shows summary fields (status / progress placeholders).
+6. To test API errors (e.g. validation) try blank Goal or deadline < 1h ahead; UI shows raw error JSON.
+7. Hot reload: edit a .razor file; .NET dev server applies changes automatically.
+
+Note: Authentication not implemented yet; a fixed dev userId is used. Update later when auth phase added.
+
+## 13. Troubleshooting
 - ERROR: connection refused -> ensure `docker compose up -d db` and container healthy.
 - 404 on /swagger -> ensure `ASPNETCORE_ENVIRONMENT=Development` (default when running `dotnet run`).
 - Currency validation: must be 3-letter uppercase.
 - Deadline must be > now + 1 hour.
+- Blazor UI not showing data -> verify ApiBase env var matches API URL and CORS not required (same origin dev HTTP).
 
-## 13. Next Steps (Roadmap)
+## 14. Next Steps (Roadmap)
 See `docs/backend_roadmap.md` for planned phases (recurrence jobs, check-ins, payments, notifications, Blazor UI).
 
-## 14. License / Purpose
+## 15. License / Purpose
 Educational / learning project for .NET 8 backend + domain design. Not production ready yet (no auth, limited validation, schedule algorithm placeholder).
 
 ---
