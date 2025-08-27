@@ -47,11 +47,17 @@ Response:
 
 ## 6. Swagger UI
 Navigate in browser: `http://localhost:5000/swagger`
-You should see endpoints:
+You should see endpoints (subset):
 - GET /health
 - POST /commitments
 - GET /commitments/{id}
 - GET /commitments
+- POST /commitments/{id}/checkins
+- POST /commitments/{id}/actions/{cancel|complete|fail|delete}
+- POST /webhooks/stripe (test only)
+- GET /payments/setup/{userId}?ensure={true|false}
+- GET /notifications/quiet-hours/{userId}
+- POST /notifications/quiet-hours/{userId}
 
 ## 7. Create a Commitment (Sample Request)
 ```
@@ -106,38 +112,106 @@ Swagger at: http://localhost:8080/swagger
 ConnectionStrings__Postgres=Host=localhost;Username=commitments;Password=commitments;Database=commitments
 ```
 
-## 12. Manual Blazor Admin UI Testing
-The server?side Blazor admin scaffold (Phase 9) provides a basic list/detail/create flow.
+## 12. Manual Blazor Admin UI Testing (Beginner Friendly)
+This gives you a simple local dashboard to create & inspect commitments.
 
-1. Start API (port assumed 5000):
+### 12.1 Start the backend
+1. Ensure Postgres is running (`docker compose up -d db`).
+2. Apply migrations (step 3 above) once.
+3. Run API:
 ```
 dotnet run --project Commitments.Api --urls http://localhost:5000
 ```
-2. Start Blazor UI (separate terminal):
+4. Keep this terminal open (logs & Hangfire dashboard info).
+
+### 12.2 Start the Blazor Server UI
+Open a new terminal:
 ```
-# Option A: use API default (configure ApiBase)
-set ApiBase=http://localhost:5000/
-# PowerShell: $env:ApiBase="http://localhost:5000/"
-# then run
 dotnet run --project Commitments.Blazor --urls http://localhost:5100
 ```
-3. Open browser: http://localhost:5100
-4. Navigate with left nav:
-   - Home
-   - Commitments (lists commitments for hardcoded dev UserId `11111111-1111-1111-1111-111111111111`)
-   - Create (submit form, then follow success link to detail)
-5. Detail page shows summary fields (status / progress placeholders).
-6. To test API errors (e.g. validation) try blank Goal or deadline < 1h ahead; UI shows raw error JSON.
-7. Hot reload: edit a .razor file; .NET dev server applies changes automatically.
+Browse to http://localhost:5100
 
-Note: Authentication not implemented yet; a fixed dev userId is used. Update later when auth phase added.
+### 12.3 Understand the Dev User
+Authentication is a basic dev-only Basic Auth in the API; the Blazor UI currently assumes a fixed user id:
+```
+11111111-1111-1111-1111-111111111111
+```
+All sample curl commands use this same id. In the future an auth phase will replace this.
 
-## 13. Troubleshooting
-- ERROR: connection refused -> ensure `docker compose up -d db` and container healthy.
-- 404 on /swagger -> ensure `ASPNETCORE_ENVIRONMENT=Development` (default when running `dotnet run`).
-- Currency validation: must be 3-letter uppercase.
-- Deadline must be > now + 1 hour.
-- Blazor UI not showing data -> verify ApiBase env var matches API URL and CORS not required (same origin dev HTTP).
+### 12.4 Create Your First Commitment (via UI)
+1. Click "Create" in left nav.
+2. Enter a short Goal (e.g. "Daily Reading").
+3. Leave defaults (daily schedule, 9:00, stake 5 EUR, deadline +7 days) and Submit.
+4. Success banner shows a link – click to open detail page.
+
+### 12.5 Explore Detail Page
+You will see:
+- Status (initial Active)
+- Progress (simple time elapsed % placeholder)
+- Risk badge (based on check-in adherence)
+- Action buttons (Cancel / Complete / Fail / Delete)
+- Recent Check-ins list (empty initially)
+
+### 12.6 Add a Check-In
+1. On detail page click "New Check-In".
+2. Optionally add a note.
+3. Save – list updates and progress / risk may change.
+
+### 12.7 Trigger Risk Changes Quickly (Optional)
+Create a commitment with a short deadline (e.g. now + 2 hours) and daily schedule; missing check-ins near deadline will show risk badges (AtRisk / Critical) automatically when you refresh.
+
+### 12.8 Use Quiet Hours (Notifications Phase)
+Quiet hours defer reminder sending. Set them (example: 22:00–07:00 UTC):
+```
+curl -X POST http://localhost:5000/notifications/quiet-hours/11111111-1111-1111-1111-111111111111 \
+  -H "Authorization: Basic ZGV2OmRldg==" \
+  -H "Content-Type: application/json" \
+  -d '{"startHour":22,"endHour":7,"timezone":"UTC"}'
+```
+Fetch current quiet hours:
+```
+curl -H "Authorization: Basic ZGV2OmRldg==" \
+  http://localhost:5000/notifications/quiet-hours/11111111-1111-1111-1111-111111111111
+```
+(Remember: Basic Auth header `dev:dev` is used by the API. The Blazor UI currently calls the API without auth for development.)
+
+### 12.9 Payment Setup (Placeholder)
+Invoke ensure setup intent (no real Stripe call unless you configure an API key):
+```
+curl -H "Authorization: Basic ZGV2OmRldg==" \
+  http://localhost:5000/payments/setup/11111111-1111-1111-1111-111111111111?ensure=true
+```
+
+### 12.10 Hangfire Dashboard
+When running in Development, visit:
+```
+http://localhost:5000/hangfire
+```
+You can see scheduled recurring jobs (reminder horizon, grace expiry, payment retry, reminder dispatch).
+
+### 12.11 Common Issues
+| Symptom | Fix |
+|---------|-----|
+| Empty list page | Ensure API is running & correct port (5000) |
+| 404 /swagger | Not in Development environment |
+| Validation error | Adjust goal length / deadline (>1h) |
+| Quiet hours not deferring | Scheduled reminder may already be rescheduled; create a new reminder nearer current time |
+
+## 13. Notification Endpoints (Summary)
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| /notifications/quiet-hours/{userId} | GET | Retrieve quiet hours config |
+| /notifications/quiet-hours/{userId} | POST | Create/update quiet hours |
+
+Body for POST:
+```
+{
+  "startHour": 22,
+  "endHour": 7,
+  "timezone": "UTC"
+}
+```
+Hours are integers 0–23; overnight windows (start > end) are supported.
 
 ## 14. Next Steps (Roadmap)
 See `docs/backend_roadmap.md` for planned phases (recurrence jobs, check-ins, payments, notifications, Blazor UI).
