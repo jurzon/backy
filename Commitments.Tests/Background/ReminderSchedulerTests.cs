@@ -9,25 +9,7 @@ namespace Commitments.Tests.Background;
 
 public class ReminderSchedulerTests
 {
-    private sealed class FakeClock : IClock { public DateTime UtcNow { get; set; } }
-
-    private static AppDbContext CreateDb()
-    {
-        var opts = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-        return new AppDbContext(opts);
-    }
-
-    private static Commitment SeedCommitment(AppDbContext db, Schedule schedule, DateTime? deadlineUtc = null)
-    {
-        var deadline = deadlineUtc ?? DateTime.UtcNow.AddDays(10);
-        var c = Commitment.Create(Guid.NewGuid(), "Test goal", 500, "EUR", deadline, "UTC", schedule);
-        db.Commitments.Add(c);
-        db.SaveChanges();
-        return c;
-    }
-
+    // Public test methods first (SA1202)
     [Fact]
     public async Task BuildsEventsForActiveCommitment()
     {
@@ -73,5 +55,28 @@ public class ReminderSchedulerTests
         await scheduler.BuildHorizonAsync();
 
         db.ReminderEvents.Count(re => re.CommitmentId == commitment.Id).Should().Be(0);
+    }
+
+    // Helpers after tests
+    private sealed class FakeClock : IClock
+    {
+        public DateTime UtcNow { get; set; }
+    }
+
+    private static AppDbContext CreateDb()
+    {
+        var opts = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new AppDbContext(opts);
+    }
+
+    private static Commitment SeedCommitment(AppDbContext db, Schedule schedule, DateTime? deadlineUtc = null)
+    {
+        var deadline = deadlineUtc ?? DateTime.UtcNow.AddDays(10);
+        var c = Commitment.Create(Guid.NewGuid(), "Test goal", 500, "EUR", deadline, "UTC", schedule);
+        db.Commitments.Add(c);
+        db.SaveChanges();
+        return c;
     }
 }

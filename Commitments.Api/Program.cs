@@ -6,6 +6,7 @@ using Commitments.Api.Background;
 using Commitments.Domain.Abstractions;
 using Commitments.Api.Payments;
 using Commitments.Api.Notifications;
+using Commitments.Api.Endpoints; // added for MapPaymentEndpoints
 using Stripe;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
@@ -46,6 +47,18 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAuthentication("Basic").AddScheme<AuthenticationSchemeOptions, BasicAuthHandler>("Basic", _ => { });
 builder.Services.AddAuthorization();
 
+// Add CORS for Blazor development
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowBlazorDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:5100", "https://localhost:5101")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 var conn = builder.Configuration.GetConnectionString("Postgres") ?? "Host=localhost;Username=commitments;Password=commitments;Database=commitments";
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(conn));
 
@@ -67,7 +80,9 @@ builder.Services.AddScoped<IGraceExpiryScanner, GraceExpiryScanner>();
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 builder.Services.AddScoped<IPaymentRetryWorker, PaymentRetryWorker>();
 // Notifications
-builder.Services.AddScoped<INotificationSender, ConsoleNotificationSender>();
+builder.Services.AddScoped<INotificationSender, ConsoleNotificationSender>(); // default
+builder.Services.AddScoped<EmailNotificationSender>();
+builder.Services.AddScoped<PushNotificationSender>();
 builder.Services.AddScoped<IReminderNotificationDispatcher, ReminderNotificationDispatcher>();
 
 // Observability: OpenTelemetry (enabled via config Observability:Tracing:Enabled=true)
@@ -112,12 +127,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseSerilogRequestLogging();
+app.UseCors("AllowBlazorDev");
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/health", [AllowAnonymous]() => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
 
 app.MapCommitmentEndpoints();
+app.MapPaymentEndpoints();
+app.MapNotificationEndpoints();
 
 // Payments placeholder endpoint (webhook stub)
 app.MapPost("/webhooks/stripe", [AllowAnonymous] async (HttpRequest request, IPaymentService payments) =>
@@ -216,3 +234,5 @@ public class BasicAuthHandler : AuthenticationHandler<AuthenticationSchemeOption
         }
     }
 }
+
+public partial class Program { }

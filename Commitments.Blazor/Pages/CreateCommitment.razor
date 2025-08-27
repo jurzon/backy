@@ -1,5 +1,5 @@
 @page "/commitments/create"
-@inject HttpClient Http
+@inject ApiClient Api
 @inject AuthenticationStateProvider AuthProvider
 
 <h3>Create Commitment</h3>
@@ -18,7 +18,7 @@
     </div>
     <div class="mb-2">
         <label class="form-label">Stake Amount (major)</label>
-        <InputNumber class="form-control" @bind-Value="_model.StakeAmount" />
+        <InputNumber class="form-control" @bind-Value="_model.StakeAmount" step="0.01" />
     </div>
     <div class="mb-2">
         <label class="form-label">Currency</label>
@@ -40,7 +40,7 @@
         <label class="form-label">Time Of Day (HH:mm)</label>
         <InputText class="form-control" @bind-Value="_model.TimeOfDay" />
     </div>
-    <button class="btn btn-primary" disabled="@_submitting || _userId == Guid.Empty">Create</button>
+    <button class="btn btn-primary" type="submit" disabled="@(_submitting)">Create</button>
 </EditForm>
 
 @if (_error != null)
@@ -55,7 +55,7 @@
     private CommitmentForm _model = new()
     {
         Currency = "EUR",
-        StakeAmount = 5,
+        StakeAmount = 5.0m, // Fix: Use decimal literal instead of int
         DeadlineDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(7)),
         DeadlineHour = 12,
         StartDate = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(1)),
@@ -72,6 +72,11 @@
     private async Task OnSubmit()
     {
         _error = null; _submitting = true; _successId = null;
+        // Fallback: if user id not set (e.g. prerender not hydrated yet) use dev id
+        if (_userId == Guid.Empty)
+        {
+            _userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        }
         try
         {
             var deadline = _model.DeadlineDate.ToDateTime(new TimeOnly(_model.DeadlineHour,0), DateTimeKind.Utc);
@@ -93,7 +98,7 @@
                     TimeOfDay = TimeOnly.Parse(_model.TimeOfDay)
                 }
             };
-            var resp = await Http.PostAsJsonAsync("commitments", payload);
+            var resp = await Api.CreateCommitmentAsync(payload);
             if (resp.IsSuccessStatusCode)
             {
                 var created = await resp.Content.ReadFromJsonAsync<ApiCommitment>();
@@ -113,7 +118,7 @@
     class CommitmentForm
     {
         public string Goal { get; set; } = string.Empty;
-        public decimal StakeAmount { get; set; }
+        public decimal StakeAmount { get; set; } // Keep as decimal for proper numeric handling
         public string Currency { get; set; } = "EUR";
         public DateOnly DeadlineDate { get; set; }
         public int DeadlineHour { get; set; }

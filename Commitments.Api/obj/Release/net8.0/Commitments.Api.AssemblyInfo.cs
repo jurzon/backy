@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Commitments.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f3bf9fd5d222dc81fc23de273c41e459d6f157da")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f150e58d454a7e74623ca2c8928d35cf6596ee6d")]
 [assembly: System.Reflection.AssemblyProductAttribute("Commitments.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Commitments.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

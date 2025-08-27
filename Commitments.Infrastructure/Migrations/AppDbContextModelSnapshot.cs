@@ -193,7 +193,30 @@ namespace Commitments.Infrastructure.Migrations
 
                     b.HasIndex("CommitmentId");
 
+                    b.HasIndex("CommitmentId", "AttemptNumber")
+                        .IsUnique();
+
                     b.ToTable("PaymentIntentLogs");
+                });
+
+            modelBuilder.Entity("Commitments.Domain.Entities.PaymentSetupState", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("HasPaymentMethod")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LatestSetupIntentId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("PaymentSetupStates");
                 });
 
             modelBuilder.Entity("Commitments.Domain.Entities.ReminderEvent", b =>

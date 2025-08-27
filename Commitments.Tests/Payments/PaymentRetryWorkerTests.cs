@@ -9,27 +9,6 @@ namespace Commitments.Tests.Payments;
 
 public class PaymentRetryWorkerTests
 {
-    private static AppDbContext CreateDb()
-    {
-        var opts = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-        return new AppDbContext(opts);
-    }
-
-    private static PaymentIntentLog FailedLog(Guid commitmentId, int attempt, string? errorCode = null)
-        => new()
-        {
-            CommitmentId = commitmentId,
-            StripePaymentIntentId = $"pi_{Guid.NewGuid():N}",
-            AmountMinor = 1000,
-            Currency = "eur",
-            Status = "failed",
-            AttemptNumber = attempt,
-            LastErrorCode = errorCode,
-            UpdatedAtUtc = DateTime.UtcNow.AddDays(-2), // old enough for retry
-        };
-
     [Fact]
     public async Task RetriesFailedNonHardDeclineAndMarksSucceeded()
     {
@@ -62,10 +41,33 @@ public class PaymentRetryWorkerTests
         log.AttemptNumber.Should().Be(1);
     }
 
+    private static AppDbContext CreateDb()
+    {
+        var opts = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new AppDbContext(opts);
+    }
+
+    private static PaymentIntentLog FailedLog(Guid commitmentId, int attempt, string? errorCode = null)
+        => new()
+        {
+            CommitmentId = commitmentId,
+            StripePaymentIntentId = $"pi_{Guid.NewGuid():N}",
+            AmountMinor = 1000,
+            Currency = "eur",
+            Status = "failed",
+            AttemptNumber = attempt,
+            LastErrorCode = errorCode,
+            UpdatedAtUtc = DateTime.UtcNow.AddDays(-2),
+        };
+
     private sealed class DummyPaymentService : IPaymentService
     {
         public Task<PaymentIntentLog> CreateFailurePaymentIntentAsync(Commitment commitment, CancellationToken ct = default) => throw new NotImplementedException();
+
         public Task EnsureSetupIntentAsync(Guid userId, CancellationToken ct = default) => Task.CompletedTask;
+
         public Task UpdatePaymentStatusAsync(string paymentIntentId, string newStatus, string? errorCode = null, CancellationToken ct = default) => Task.CompletedTask;
     }
 }

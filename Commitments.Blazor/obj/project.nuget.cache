@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "+onXxPFFxXw=",
+  "dgSpecHash": "VM9NhtF7omw=",
   "success": true,
   "projectFilePath": "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Blazor\\Commitments.Blazor.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\zonne\\.nuget\\packages\\roslynator.analyzers\\4.12.0\\roslynator.analyzers.4.12.0.nupkg.sha512",
+    "C:\\Users\\zonne\\.nuget\\packages\\stylecop.analyzers\\1.2.0-beta.556\\stylecop.analyzers.1.2.0-beta.556.nupkg.sha512",
+    "C:\\Users\\zonne\\.nuget\\packages\\stylecop.analyzers.unstable\\1.2.0.556\\stylecop.analyzers.unstable.1.2.0.556.nupkg.sha512"
+  ],
   "logs": []
 }

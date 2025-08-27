@@ -31,8 +31,43 @@ public class StripePaymentService : IPaymentService
 
     public async Task EnsureSetupIntentAsync(Guid userId, CancellationToken ct = default)
     {
-        // Placeholder: would create SetupIntent if user has no payment method.
-        await Task.CompletedTask;
+        var state = await _db.PaymentSetupStates.FirstOrDefaultAsync(s => s.UserId == userId, ct);
+        if (state != null && state.HasPaymentMethod) return; // already set
+
+        string? setupIntentId = null;
+        if (_stripeConfigured)
+        {
+            try
+            {
+                var create = new SetupIntentCreateOptions
+                {
+                    Usage = "off_session",
+                    Metadata = new Dictionary<string, string>{{"user_id", userId.ToString()}},
+                };
+                var si = await _si.CreateAsync(create, cancellationToken: ct);
+                setupIntentId = si.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create SetupIntent for {UserId}", userId);
+            }
+        }
+        else
+        {
+            setupIntentId = $"seti_{userId.ToString("N").Substring(0,8)}_local";
+        }
+
+        if (state == null)
+        {
+            state = new PaymentSetupState { UserId = userId, HasPaymentMethod = false, LatestSetupIntentId = setupIntentId };
+            _db.PaymentSetupStates.Add(state);
+        }
+        else
+        {
+            state.LatestSetupIntentId = setupIntentId ?? state.LatestSetupIntentId;
+            state.UpdatedAtUtc = DateTime.UtcNow;
+        }
+        await _db.SaveChangesAsync(ct);
     }
 
     public async Task<PaymentIntentLog> CreateFailurePaymentIntentAsync(Commitment commitment, CancellationToken ct = default)

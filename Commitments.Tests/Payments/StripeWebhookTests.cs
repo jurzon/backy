@@ -66,7 +66,7 @@ public class StripeWebhookTests : IClassFixture<TestApiFactory>
     public async Task AcceptsEventWhenSignatureVerificationDisabled()
     {
         // Override configuration to disable signature enforcement
-        var factoryNoSig = _factory.WithWebHostBuilder(b => b.ConfigureAppConfiguration(cfg =>
+        var factoryNoSig = _factory.WithWebHostBuilder(b => b.ConfigureAppConfiguration((_, cfg) =>
             cfg.AddInMemoryCollection(new Dictionary<string, string?> { ["Stripe:WebhookSecret"] = string.Empty, } )));
         var client = factoryNoSig.CreateClient();
         var payload = BuildEventJson("payment_intent.succeeded", "pi_456");

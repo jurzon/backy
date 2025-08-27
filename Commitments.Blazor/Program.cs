@@ -16,9 +16,13 @@ builder.Services.AddScoped<DevAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<DevAuthStateProvider>());
 
 builder.Services.AddSingleton<WeatherForecastService>();
+
 builder.Services.AddHttpClient<ApiClient>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration.GetValue<string>("ApiBase") ?? "https://localhost:5001/");
+    // Allow override via configuration key ApiBase or environment variable ApiBase
+    var apiBase = builder.Configuration["ApiBase"] ?? Environment.GetEnvironmentVariable("ApiBase") ?? "http://localhost:5000/"; // match README default
+    if (!apiBase.EndsWith('/')) apiBase += "/";
+    client.BaseAddress = new Uri(apiBase);
     // Dev basic credentials (dev:dev) to call API
     var bytes = Encoding.UTF8.GetBytes("dev:dev");
     client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(bytes));
@@ -30,14 +34,11 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseRouting();
 
 app.MapBlazorHub();

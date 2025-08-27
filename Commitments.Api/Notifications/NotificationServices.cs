@@ -36,8 +36,6 @@ public interface IReminderNotificationDispatcher
 
 public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender sender, IClock clock) : IReminderNotificationDispatcher
 {
-    private const int DefaultQuietStartHour = 22; // 22:00
-    private const int DefaultQuietEndHour = 7;   // 07:00
     private const int MaxDeferrals = 3; // safety: after 3 quiet deferrals send anyway
 
     public async Task DispatchAsync(CancellationToken ct = default)
@@ -52,6 +50,8 @@ public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender
 
         var commitmentIds = reminders.Select(r => r.CommitmentId).Distinct().ToList();
         var commitments = await db.Commitments.Where(c => commitmentIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id, ct);
+        var userIds = commitments.Values.Select(c => c.UserId).Distinct().ToList();
+        var quiet = await db.NotificationQuietHours.Where(q => userIds.Contains(q.UserId)).ToDictionaryAsync(q => q.UserId, ct);
 
         foreach (var rem in reminders)
         {
@@ -62,15 +62,15 @@ public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender
                 continue;
             }
 
-            // Derive local time (placeholder: treat timezone as UTC)
-            var localNow = now; // TODO real TZ conversion
-            var (startHour, endHour) = GetQuietWindow(commitment.UserId); // future per-user customization
-            var inQuiet = IsInQuiet(localNow, startHour, endHour);
+            var localNow = now; // TODO timezone conversion using commitment.Timezone
+            var (startHour, endHour) = quiet.TryGetValue(commitment.UserId, out var q)
+                ? (q.StartHour, q.EndHour)
+                : (22, 7); // default
 
+            var inQuiet = IsInQuiet(localNow, startHour, endHour);
             if (inQuiet && GetDeferralCount(rem) < MaxDeferrals)
             {
-                var nextBoundary = ComputeNextQuietEnd(localNow, startHour, endHour);
-                rem.ScheduledForUtc = nextBoundary;
+                rem.ScheduledForUtc = ComputeNextQuietEnd(localNow, startHour, endHour);
                 SetDeferralCount(rem, GetDeferralCount(rem) + 1);
                 continue;
             }
@@ -82,19 +82,13 @@ public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender
         await db.SaveChangesAsync(ct);
     }
 
-    private static (int startHour, int endHour) GetQuietWindow(Guid userId)
-        => (DefaultQuietStartHour, DefaultQuietEndHour);
-
     private static bool IsInQuiet(DateTime local, int startHour, int endHour)
     {
+        if (startHour == endHour) return false; // zero window
         if (startHour < endHour)
-        {
-            // Simple same-day window (not used here but future-proof)
             return local.Hour >= startHour && local.Hour < endHour;
-        }
-        // Overnight window (e.g., 22 -> 7)
-        if (local.Hour >= startHour) return true; // 22..23
-        if (local.Hour < endHour) return true;    // 0..6
+        if (local.Hour >= startHour) return true;
+        if (local.Hour < endHour) return true;
         return false;
     }
 
@@ -106,26 +100,16 @@ public class ReminderNotificationDispatcher(AppDbContext db, INotificationSender
             if (local < endToday) return endToday;
             return endToday.AddDays(1);
         }
-        // overnight window
         if (local.Hour >= startHour)
-        {
-            // send at endHour next day
-            var nextDayEnd = new DateTime(local.Year, local.Month, local.Day, endHour, 0, 0, DateTimeKind.Utc).AddDays(1);
-            return nextDayEnd;
-        }
-        // before end hour same morning
+            return new DateTime(local.Year, local.Month, local.Day, endHour, 0, 0, DateTimeKind.Utc).AddDays(1);
         return new DateTime(local.Year, local.Month, local.Day, endHour, 0, 0, DateTimeKind.Utc);
     }
 
-    // Store deferral count encoded in Type suffix (simple, avoids schema change) e.g., originalType|d=2
     private static int GetDeferralCount(ReminderEvent rem)
     {
         var parts = rem.Type.Split('|');
         foreach (var p in parts)
-        {
-            if (p.StartsWith("d=", StringComparison.OrdinalIgnoreCase) && int.TryParse(p[2..], out var n))
-                return n;
-        }
+            if (p.StartsWith("d=", StringComparison.OrdinalIgnoreCase) && int.TryParse(p[2..], out var n)) return n;
         return 0;
     }
 

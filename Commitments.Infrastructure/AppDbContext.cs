@@ -12,6 +12,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ReminderEvent> ReminderEvents => Set<ReminderEvent>();
     public DbSet<PaymentSetupState> PaymentSetupStates => Set<PaymentSetupState>();
+    public DbSet<NotificationQuietHours> NotificationQuietHours => Set<NotificationQuietHours>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -62,6 +63,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.CommitmentId, x.ScheduledForUtc });
             e.HasIndex(x => x.Status);
+        });
+
+        b.Entity<NotificationQuietHours>(e =>
+        {
+            e.HasKey(x => x.UserId);
         });
     }
 }

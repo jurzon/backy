@@ -1,7 +1,10 @@
 using System.Net.Http.Json;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CommitmentsBlazor.Services;
 
+#pragma warning disable SA1101 // this. prefix not required
+#pragma warning disable CA1054 // Keep string for simplicity in sample
 public class ApiClient
 {
     private readonly HttpClient _http;
@@ -23,13 +26,20 @@ public class ApiClient
     public Task<List<CheckIn>?> GetCheckInsAsync(Guid commitmentId, CancellationToken ct = default)
         => _http.GetFromJsonAsync<List<CheckIn>>($"commitments/{commitmentId}/checkins", ct);
 
-    public Task<HttpResponseMessage> CancelAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/cancel", null);
-    public Task<HttpResponseMessage> CompleteAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/complete", null);
-    public Task<HttpResponseMessage> FailAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/fail", null);
-    public Task<HttpResponseMessage> DeleteAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/delete", null);
+    private static Uri U(string path) => new(path, UriKind.Relative);
+
+    public Task<HttpResponseMessage> CancelAsync(Guid id) => _http.PostAsync(U($"commitments/{id}/actions/cancel"), null);
+    public Task<HttpResponseMessage> CompleteAsync(Guid id) => _http.PostAsync(U($"commitments/{id}/actions/complete"), null);
+    public Task<HttpResponseMessage> FailAsync(Guid id) => _http.PostAsync(U($"commitments/{id}/actions/fail"), null);
+    public Task<HttpResponseMessage> DeleteAsync(Guid id) => _http.PostAsync(U($"commitments/{id}/actions/delete"), null);
 
     public Task<HttpResponseMessage> CreateCheckInAsync(Guid id, string? note, string? photoUrl = null)
-        => _http.PostAsJsonAsync($"commitments/{id}/checkins", new { note, photoUrl });
+        => _http.PostAsJsonAsync(U($"commitments/{id}/checkins"), new { note, photoUrl });
+
+    public Task<HttpResponseMessage> CreateCommitmentAsync(object payload, CancellationToken ct = default)
+        => _http.PostAsJsonAsync("commitments", payload, ct);
 
     private class ResponseWrapper { public List<CommitmentSummary>? items { get; set; } }
 }
+#pragma warning restore CA1054
+#pragma warning restore SA1101
