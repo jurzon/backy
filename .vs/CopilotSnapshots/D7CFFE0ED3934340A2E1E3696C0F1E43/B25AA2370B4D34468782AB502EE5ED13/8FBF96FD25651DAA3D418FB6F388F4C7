@@ -1,0 +1,136 @@
+﻿namespace Commitments.Domain.Entities;
+
+public class Schedule
+{
+    public Guid CommitmentId { get; set; }
+    public SchedulePatternType PatternType { get; private set; }
+    public int Interval { get; private set; } = 1;
+    public WeekdayMask Weekdays { get; private set; } = WeekdayMask.Monday;
+    public int? MonthDay { get; private set; }
+    public int? NthWeek { get; private set; }
+    public int? NthWeekday { get; private set; } // 0=Mon
+    public DateOnly StartDate { get; private set; }
+    public TimeOnly TimeOfDay { get; private set; }
+    public string Timezone { get; private set; } = "UTC";
+
+    private Schedule() {}
+
+    public static Schedule CreateDaily(DateOnly startDate, TimeOnly time, string timezone, int interval = 1)
+        => new()
+        {
+            PatternType = SchedulePatternType.Daily,
+            Interval = interval,
+            StartDate = startDate,
+            TimeOfDay = time,
+            Timezone = timezone
+        };
+
+    public static Schedule CreateWeekly(DateOnly startDate, TimeOnly time, string timezone, WeekdayMask weekdays, int interval = 1)
+        => new()
+        {
+            PatternType = SchedulePatternType.Weekly,
+            Interval = interval,
+            StartDate = startDate,
+            TimeOfDay = time,
+            Timezone = timezone,
+            Weekdays = weekdays
+        };
+
+    public static Schedule CreateMonthlyByDay(DateOnly startDate, TimeOnly time, string timezone, int monthDay, int interval = 1)
+        => new()
+        {
+            PatternType = SchedulePatternType.Monthly,
+            Interval = interval,
+            StartDate = startDate,
+            TimeOfDay = time,
+            Timezone = timezone,
+            MonthDay = monthDay
+        };
+
+    public static Schedule CreateMonthlyByNthWeekday(DateOnly startDate, TimeOnly time, string timezone, int nthWeek, int nthWeekday, int interval = 1)
+        => new()
+        {
+            PatternType = SchedulePatternType.Monthly,
+            Interval = interval,
+            StartDate = startDate,
+            TimeOfDay = time,
+            Timezone = timezone,
+            NthWeek = nthWeek,
+            NthWeekday = nthWeekday
+        };
+
+    public IEnumerable<DateTime> PreviewNextOccurrences(DateTime deadlineUtc, int count)
+    {
+        var list = new List<DateTime>();
+        var after = DateTime.UtcNow.AddMinutes(-1); // ensure at least next
+        DateTime? next = NextOccurrence(after, deadlineUtc);
+        while (next != null && next < deadlineUtc && list.Count < count)
+        {
+            list.Add(next.Value);
+            next = NextOccurrence(next.Value, deadlineUtc);
+        }
+        return list;
+    }
+
+    public DateTime? NextOccurrence(DateTime afterUtc, DateTime deadlineUtc)
+    {
+        // Simplified placeholder implementation (later: handle timezone & DST precisely)
+        var localAfter = afterUtc; // ignoring timezone for initial domain skeleton
+        DateTime candidate = localAfter.AddMinutes(1);
+        switch (PatternType)
+        {
+            case SchedulePatternType.Daily:
+                candidate = localAfter.Date.AddDays(1).Add(TimeOfDay.ToTimeSpan());
+                break;
+            case SchedulePatternType.Weekly:
+                for (int i = 1; i <= 14; i++)
+                {
+                    var day = localAfter.Date.AddDays(i);
+                    var mask = DayOfWeekToMask(day.DayOfWeek);
+                    if ((Weekdays & mask) != 0)
+                    {
+                        candidate = day.Add(TimeOfDay.ToTimeSpan());
+                        break;
+                    }
+                }
+                break;
+            case SchedulePatternType.Monthly:
+                var nextMonth = new DateTime(localAfter.Year, localAfter.Month, 1).AddMonths(1);
+                int dayNum = MonthDay ?? 1;
+                var daysIn = DateTime.DaysInMonth(nextMonth.Year, nextMonth.Month);
+                if (dayNum > daysIn) dayNum = daysIn;
+                candidate = new DateTime(nextMonth.Year, nextMonth.Month, dayNum).Add(TimeOfDay.ToTimeSpan());
+                break;
+        }
+        if (candidate >= deadlineUtc) return null;
+        return candidate;
+    }
+
+    public int CountOccurrencesUpTo(DateTime untilExclusiveUtc, DateTime deadlineUtc, int safetyCap = 1000)
+    {
+        var count = 0;
+        var first = new DateTime(StartDate.Year, StartDate.Month, StartDate.Day, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second, DateTimeKind.Utc);
+        if (first >= untilExclusiveUtc || first >= deadlineUtc) return 0;
+        var current = first;
+        while (current < untilExclusiveUtc && current < deadlineUtc && count < safetyCap)
+        {
+            count++;
+            var next = NextOccurrence(current, deadlineUtc);
+            if (next == null) break;
+            current = next.Value;
+        }
+        return count;
+    }
+
+    private static WeekdayMask DayOfWeekToMask(DayOfWeek dow) => dow switch
+    {
+        DayOfWeek.Monday => WeekdayMask.Monday,
+        DayOfWeek.Tuesday => WeekdayMask.Tuesday,
+        DayOfWeek.Wednesday => WeekdayMask.Wednesday,
+        DayOfWeek.Thursday => WeekdayMask.Thursday,
+        DayOfWeek.Friday => WeekdayMask.Friday,
+        DayOfWeek.Saturday => WeekdayMask.Saturday,
+        DayOfWeek.Sunday => WeekdayMask.Sunday,
+        _ => WeekdayMask.None
+    };
+}

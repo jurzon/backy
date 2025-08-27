@@ -1,0 +1,54 @@
+using Commitments.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Hangfire;
+using Commitments.Domain.Entities;
+using Commitments.Domain.Abstractions;
+
+namespace Commitments.Api.Background;
+
+public interface IReminderScheduler
+{
+    Task BuildHorizonAsync(CancellationToken ct = default);
+}
+
+public class ReminderScheduler(AppDbContext db, IClock clock) : IReminderScheduler
+{
+    private static readonly TimeSpan Horizon = TimeSpan.FromDays(30);
+
+    public async Task BuildHorizonAsync(CancellationToken ct = default)
+    {
+        var now = clock.UtcNow;
+        var horizonEnd = now + Horizon;
+        var commitments = await db.Commitments
+            .Include(c => c.Schedule)
+            .Where(c => c.Status == CommitmentStatus.Active && c.DeadlineUtc > now)
+            .ToListAsync(ct);
+
+        foreach (var c in commitments)
+        {
+            if (c.Schedule == null) continue;
+            var occurrences = c.Schedule.PreviewNextOccurrences(min(c.DeadlineUtc, horizonEnd), 20);
+            foreach (var occ in occurrences)
+            {
+                if (!await db.ReminderEvents.AnyAsync(r => r.CommitmentId == c.Id && r.ScheduledForUtc == occ, ct))
+                {
+                    db.ReminderEvents.Add(new ReminderEvent
+                    {
+                        CommitmentId = c.Id,
+                        ScheduledForUtc = occ,
+                        Type = "reminder.checkin_due",
+                        Status = "pending"
+                    });
+                }
+            }
+        }
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static DateTime min(DateTime a, DateTime b) => a < b ? a : b;
+}
+
+public class ReminderHorizonJob(IReminderScheduler scheduler)
+{
+    public Task RunAsync() => scheduler.BuildHorizonAsync();
+}

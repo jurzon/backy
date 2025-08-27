@@ -8,6 +8,19 @@
           "build/netstandard1.0/coverlet.collector.targets": {}
         }
       },
+      "Dapper/2.0.123": {
+        "type": "package",
+        "compile": {
+          "lib/net5.0/Dapper.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net5.0/Dapper.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "FluentAssertions/6.12.0": {
         "type": "package",
         "dependencies": {
@@ -21,6 +34,79 @@
         "runtime": {
           "lib/net6.0/FluentAssertions.dll": {
             "related": ".pdb;.xml"
+          }
+        }
+      },
+      "Hangfire.AspNetCore/1.8.14": {
+        "type": "package",
+        "dependencies": {
+          "Hangfire.NetCore": "[1.8.14]"
+        },
+        "compile": {
+          "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {
+            "related": ".xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
+      },
+      "Hangfire.Core/1.8.14": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "11.0.1"
+        },
+        "compile": {
+          "lib/netstandard2.0/Hangfire.Core.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.Core.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Hangfire.NetCore/1.8.14": {
+        "type": "package",
+        "dependencies": {
+          "Hangfire.Core": "[1.8.14]",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.0.0",
+          "Microsoft.Extensions.Hosting.Abstractions": "3.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "3.0.0"
+        },
+        "compile": {
+          "lib/netstandard2.1/Hangfire.NetCore.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/Hangfire.NetCore.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Hangfire.PostgreSql/1.20.12": {
+        "type": "package",
+        "dependencies": {
+          "Dapper": "2.0.123",
+          "Hangfire.Core": "1.8.0",
+          "Microsoft.CSharp": "4.7.0",
+          "Npgsql": "6.0.11"
+        },
+        "compile": {
+          "lib/netstandard2.0/Hangfire.PostgreSql.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.PostgreSql.dll": {
+            "related": ".xml"
           }
         }
       },
@@ -54,6 +140,15 @@
         "build": {
           "build/netstandard2.0/Microsoft.CodeCoverage.props": {},
           "build/netstandard2.0/Microsoft.CodeCoverage.targets": {}
+        }
+      },
+      "Microsoft.CSharp/4.7.0": {
+        "type": "package",
+        "compile": {
+          "ref/netcoreapp2.0/_._": {}
+        },
+        "runtime": {
+          "lib/netcoreapp2.0/_._": {}
         }
       },
       "Microsoft.EntityFrameworkCore/8.0.8": {
@@ -98,6 +193,22 @@
         },
         "runtime": {
           "lib/netstandard2.0/_._": {}
+        }
+      },
+      "Microsoft.EntityFrameworkCore.InMemory/8.0.8": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "8.0.8"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll": {
+            "related": ".xml"
+          }
         }
       },
       "Microsoft.EntityFrameworkCore.Relational/8.0.8": {
@@ -220,6 +331,41 @@
         },
         "build": {
           "buildTransitive/net6.0/_._": {}
+        }
+      },
+      "Microsoft.Extensions.FileProviders.Abstractions/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "3.0.0"
+        },
+        "compile": {
+          "lib/netcoreapp3.0/Microsoft.Extensions.FileProviders.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/Microsoft.Extensions.FileProviders.Abstractions.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.Extensions.Hosting.Abstractions/3.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "3.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "3.0.0",
+          "Microsoft.Extensions.FileProviders.Abstractions": "3.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "3.0.0"
+        },
+        "compile": {
+          "lib/netcoreapp3.0/Microsoft.Extensions.Hosting.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/Microsoft.Extensions.Hosting.Abstractions.dll": {
+            "related": ".xml"
+          }
         }
       },
       "Microsoft.Extensions.Logging/8.0.0": {
@@ -837,6 +983,9 @@
         "dependencies": {
           "Commitments.Domain": "1.0.0",
           "Commitments.Infrastructure": "1.0.0",
+          "Hangfire.AspNetCore": "1.8.14",
+          "Hangfire.Core": "1.8.14",
+          "Hangfire.PostgreSql": "1.20.12",
           "Microsoft.AspNetCore.OpenApi": "8.0.8",
           "Swashbuckle.AspNetCore": "6.5.0"
         },
@@ -931,6 +1080,24 @@
         "coverlet.collector.nuspec"
       ]
     },
+    "Dapper/2.0.123": {
+      "sha512": "RDFF4rBLLmbpi6pwkY7q/M6UXHRJEOerplDGE5jwEkP/JGJnBauAClYavNKJPW1yOTWRPIyfj4is3EaJxQXILQ==",
+      "type": "package",
+      "path": "dapper/2.0.123",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Dapper.png",
+        "dapper.2.0.123.nupkg.sha512",
+        "dapper.nuspec",
+        "lib/net461/Dapper.dll",
+        "lib/net461/Dapper.xml",
+        "lib/net5.0/Dapper.dll",
+        "lib/net5.0/Dapper.xml",
+        "lib/netstandard2.0/Dapper.dll",
+        "lib/netstandard2.0/Dapper.xml"
+      ]
+    },
     "FluentAssertions/6.12.0": {
       "sha512": "ZXhHT2YwP9lajrwSKbLlFqsmCCvFJMoRSK9t7sImfnCyd0OB3MhgxdoMcVqxbq1iyxD6mD2fiackWmBb7ayiXQ==",
       "type": "package",
@@ -959,6 +1126,103 @@
         "lib/netstandard2.1/FluentAssertions.dll",
         "lib/netstandard2.1/FluentAssertions.pdb",
         "lib/netstandard2.1/FluentAssertions.xml"
+      ]
+    },
+    "Hangfire.AspNetCore/1.8.14": {
+      "sha512": "aTPzKN/g9SW30QB1SLTOMuckKqTVL1YAhtEpWll4LPbPTgyeBHJTChdRhrN127fj+mqJ6P4P7+HJBhNYUFTfNw==",
+      "type": "package",
+      "path": "hangfire.aspnetcore/1.8.14",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "COPYING",
+        "COPYING.LESSER",
+        "LICENSE.md",
+        "LICENSE_ROYALTYFREE",
+        "LICENSE_STANDARD",
+        "NOTICES",
+        "hangfire.aspnetcore.1.8.14.nupkg.sha512",
+        "hangfire.aspnetcore.nuspec",
+        "icon.png",
+        "lib/net451/Hangfire.AspNetCore.dll",
+        "lib/net451/Hangfire.AspNetCore.xml",
+        "lib/net461/Hangfire.AspNetCore.dll",
+        "lib/net461/Hangfire.AspNetCore.xml",
+        "lib/netcoreapp3.0/Hangfire.AspNetCore.dll",
+        "lib/netcoreapp3.0/Hangfire.AspNetCore.xml",
+        "lib/netstandard1.3/Hangfire.AspNetCore.dll",
+        "lib/netstandard1.3/Hangfire.AspNetCore.xml",
+        "lib/netstandard2.0/Hangfire.AspNetCore.dll",
+        "lib/netstandard2.0/Hangfire.AspNetCore.xml"
+      ]
+    },
+    "Hangfire.Core/1.8.14": {
+      "sha512": "tj/+J8/UdaxydFX6VQr5IEyBtVbAOvkQ8X8tIQKwY9zlpmK83hP4iHEQQQ26zzGUpcE1HlPc6PBUv0NgUDXS3A==",
+      "type": "package",
+      "path": "hangfire.core/1.8.14",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "COPYING",
+        "COPYING.LESSER",
+        "LICENSE.md",
+        "LICENSE_ROYALTYFREE",
+        "LICENSE_STANDARD",
+        "NOTICES",
+        "README.md",
+        "hangfire.core.1.8.14.nupkg.sha512",
+        "hangfire.core.nuspec",
+        "icon.png",
+        "lib/net451/Hangfire.Core.dll",
+        "lib/net451/Hangfire.Core.xml",
+        "lib/net46/Hangfire.Core.dll",
+        "lib/net46/Hangfire.Core.xml",
+        "lib/netstandard1.3/Hangfire.Core.dll",
+        "lib/netstandard1.3/Hangfire.Core.xml",
+        "lib/netstandard2.0/Hangfire.Core.dll",
+        "lib/netstandard2.0/Hangfire.Core.xml"
+      ]
+    },
+    "Hangfire.NetCore/1.8.14": {
+      "sha512": "fBLdsxWYFdrQuenvVHEj/z8nOXoOTqpWIl4qYoinBAUCVmp4qlxfFsY3Aq3VVbwket0wBH472aG2LAmYm6hjxw==",
+      "type": "package",
+      "path": "hangfire.netcore/1.8.14",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "COPYING",
+        "COPYING.LESSER",
+        "LICENSE.md",
+        "LICENSE_ROYALTYFREE",
+        "LICENSE_STANDARD",
+        "NOTICES",
+        "hangfire.netcore.1.8.14.nupkg.sha512",
+        "hangfire.netcore.nuspec",
+        "icon.png",
+        "lib/net451/Hangfire.NetCore.dll",
+        "lib/net451/Hangfire.NetCore.xml",
+        "lib/net461/Hangfire.NetCore.dll",
+        "lib/net461/Hangfire.NetCore.xml",
+        "lib/netstandard1.3/Hangfire.NetCore.dll",
+        "lib/netstandard1.3/Hangfire.NetCore.xml",
+        "lib/netstandard2.0/Hangfire.NetCore.dll",
+        "lib/netstandard2.0/Hangfire.NetCore.xml",
+        "lib/netstandard2.1/Hangfire.NetCore.dll",
+        "lib/netstandard2.1/Hangfire.NetCore.xml"
+      ]
+    },
+    "Hangfire.PostgreSql/1.20.12": {
+      "sha512": "KvozigeVgbYSinFmaj5qQWRaBG7ey/S73UP6VLIOPcP1UrZO0/6hSw4jN53TKpWP2UsiMuYONRmQbFDxGAi4ug==",
+      "type": "package",
+      "path": "hangfire.postgresql/1.20.12",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "hangfire.postgresql.1.20.12.nupkg.sha512",
+        "hangfire.postgresql.nuspec",
+        "lib/netstandard2.0/Hangfire.PostgreSql.dll",
+        "lib/netstandard2.0/Hangfire.PostgreSql.xml"
       ]
     },
     "Microsoft.AspNetCore.OpenApi/8.0.8": {
@@ -1042,6 +1306,75 @@
         "microsoft.codecoverage.nuspec"
       ]
     },
+    "Microsoft.CSharp/4.7.0": {
+      "sha512": "pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA==",
+      "type": "package",
+      "path": "microsoft.csharp/4.7.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/MonoAndroid10/_._",
+        "lib/MonoTouch10/_._",
+        "lib/net45/_._",
+        "lib/netcore50/Microsoft.CSharp.dll",
+        "lib/netcoreapp2.0/_._",
+        "lib/netstandard1.3/Microsoft.CSharp.dll",
+        "lib/netstandard2.0/Microsoft.CSharp.dll",
+        "lib/netstandard2.0/Microsoft.CSharp.xml",
+        "lib/portable-net45+win8+wp8+wpa81/_._",
+        "lib/uap10.0.16299/_._",
+        "lib/win8/_._",
+        "lib/wp80/_._",
+        "lib/wpa81/_._",
+        "lib/xamarinios10/_._",
+        "lib/xamarinmac20/_._",
+        "lib/xamarintvos10/_._",
+        "lib/xamarinwatchos10/_._",
+        "microsoft.csharp.4.7.0.nupkg.sha512",
+        "microsoft.csharp.nuspec",
+        "ref/MonoAndroid10/_._",
+        "ref/MonoTouch10/_._",
+        "ref/net45/_._",
+        "ref/netcore50/Microsoft.CSharp.dll",
+        "ref/netcore50/Microsoft.CSharp.xml",
+        "ref/netcore50/de/Microsoft.CSharp.xml",
+        "ref/netcore50/es/Microsoft.CSharp.xml",
+        "ref/netcore50/fr/Microsoft.CSharp.xml",
+        "ref/netcore50/it/Microsoft.CSharp.xml",
+        "ref/netcore50/ja/Microsoft.CSharp.xml",
+        "ref/netcore50/ko/Microsoft.CSharp.xml",
+        "ref/netcore50/ru/Microsoft.CSharp.xml",
+        "ref/netcore50/zh-hans/Microsoft.CSharp.xml",
+        "ref/netcore50/zh-hant/Microsoft.CSharp.xml",
+        "ref/netcoreapp2.0/_._",
+        "ref/netstandard1.0/Microsoft.CSharp.dll",
+        "ref/netstandard1.0/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/de/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/es/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/fr/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/it/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/ja/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/ko/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/ru/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/zh-hans/Microsoft.CSharp.xml",
+        "ref/netstandard1.0/zh-hant/Microsoft.CSharp.xml",
+        "ref/netstandard2.0/Microsoft.CSharp.dll",
+        "ref/netstandard2.0/Microsoft.CSharp.xml",
+        "ref/portable-net45+win8+wp8+wpa81/_._",
+        "ref/uap10.0.16299/_._",
+        "ref/win8/_._",
+        "ref/wp80/_._",
+        "ref/wpa81/_._",
+        "ref/xamarinios10/_._",
+        "ref/xamarinmac20/_._",
+        "ref/xamarintvos10/_._",
+        "ref/xamarinwatchos10/_._",
+        "useSharedDesignerContext.txt",
+        "version.txt"
+      ]
+    },
     "Microsoft.EntityFrameworkCore/8.0.8": {
       "sha512": "iK+jrJzkfbIxutB7or808BPmJtjUEi5O+eSM7cLDwsyde6+3iOujCSfWnrHrLxY3u+EQrJD+aD8DJ6ogPA2Rtw==",
       "type": "package",
@@ -1086,6 +1419,21 @@
         "lib/netstandard2.0/_._",
         "microsoft.entityframeworkcore.analyzers.8.0.8.nupkg.sha512",
         "microsoft.entityframeworkcore.analyzers.nuspec"
+      ]
+    },
+    "Microsoft.EntityFrameworkCore.InMemory/8.0.8": {
+      "sha512": "B4r7MGPHUjuIdoI4dMvGFWK2vIT1svIgR3fITc+62ZHmbkRS+gq0mZ8BU9CXM388MfD5Tsn5KXJjWeu+b9gLlg==",
+      "type": "package",
+      "path": "microsoft.entityframeworkcore.inmemory/8.0.8",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "PACKAGE.md",
+        "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll",
+        "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.xml",
+        "microsoft.entityframeworkcore.inmemory.8.0.8.nupkg.sha512",
+        "microsoft.entityframeworkcore.inmemory.nuspec"
       ]
     },
     "Microsoft.EntityFrameworkCore.Relational/8.0.8": {
@@ -1486,6 +1834,36 @@
         "microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
         "microsoft.extensions.dependencyinjection.abstractions.nuspec",
         "useSharedDesignerContext.txt"
+      ]
+    },
+    "Microsoft.Extensions.FileProviders.Abstractions/3.0.0": {
+      "sha512": "kahEeykb6FyQytoZNNXuz74X85B4weIEt8Kd+0klK48bkXDWOIHAOvNjlGsPMcS9CL935Te8QGQS83JqCbpdHA==",
+      "type": "package",
+      "path": "microsoft.extensions.fileproviders.abstractions/3.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netcoreapp3.0/Microsoft.Extensions.FileProviders.Abstractions.dll",
+        "lib/netcoreapp3.0/Microsoft.Extensions.FileProviders.Abstractions.xml",
+        "lib/netstandard2.0/Microsoft.Extensions.FileProviders.Abstractions.dll",
+        "lib/netstandard2.0/Microsoft.Extensions.FileProviders.Abstractions.xml",
+        "microsoft.extensions.fileproviders.abstractions.3.0.0.nupkg.sha512",
+        "microsoft.extensions.fileproviders.abstractions.nuspec"
+      ]
+    },
+    "Microsoft.Extensions.Hosting.Abstractions/3.0.0": {
+      "sha512": "qeDWS5ErmkUN96BdQqpmeCmLk5HJWQ/SPw3ux5v5/Qb0hKZS5wojBMulnBC7JUEiBwg7Ir71Yjf1lFiRT5MdtQ==",
+      "type": "package",
+      "path": "microsoft.extensions.hosting.abstractions/3.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/netcoreapp3.0/Microsoft.Extensions.Hosting.Abstractions.dll",
+        "lib/netcoreapp3.0/Microsoft.Extensions.Hosting.Abstractions.xml",
+        "lib/netstandard2.0/Microsoft.Extensions.Hosting.Abstractions.dll",
+        "lib/netstandard2.0/Microsoft.Extensions.Hosting.Abstractions.xml",
+        "microsoft.extensions.hosting.abstractions.3.0.0.nupkg.sha512",
+        "microsoft.extensions.hosting.abstractions.nuspec"
       ]
     },
     "Microsoft.Extensions.Logging/8.0.0": {
@@ -2285,7 +2663,9 @@
     "net8.0": [
       "Commitments.Api >= 1.0.0",
       "Commitments.Domain >= 1.0.0",
+      "Commitments.Infrastructure >= 1.0.0",
       "FluentAssertions >= 6.12.0",
+      "Microsoft.EntityFrameworkCore.InMemory >= 8.0.8",
       "Microsoft.NET.Test.Sdk >= 17.9.0",
       "coverlet.collector >= 6.0.0",
       "xunit >= 2.7.0",
@@ -2326,6 +2706,9 @@
             },
             "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Domain\\Commitments.Domain.csproj": {
               "projectPath": "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Domain\\Commitments.Domain.csproj"
+            },
+            "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Infrastructure\\Commitments.Infrastructure.csproj": {
+              "projectPath": "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Infrastructure\\Commitments.Infrastructure.csproj"
             }
           }
         }
@@ -2349,6 +2732,10 @@
           "FluentAssertions": {
             "target": "Package",
             "version": "[6.12.0, )"
+          },
+          "Microsoft.EntityFrameworkCore.InMemory": {
+            "target": "Package",
+            "version": "[8.0.8, )"
           },
           "Microsoft.NET.Test.Sdk": {
             "target": "Package",

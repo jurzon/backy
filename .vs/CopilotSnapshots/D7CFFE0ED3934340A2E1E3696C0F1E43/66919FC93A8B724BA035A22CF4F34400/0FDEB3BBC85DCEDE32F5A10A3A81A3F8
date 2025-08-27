@@ -1,0 +1,76 @@
+﻿using Commitments.Api.Background;
+using Commitments.Domain.Entities;
+using Commitments.Infrastructure;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+
+namespace Commitments.Tests.Background;
+
+public class GraceExpiryScannerTests
+{
+    private AppDbContext CreateDb()
+    {
+        var opts = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+        return new AppDbContext(opts);
+    }
+
+    private Commitment NewCommitment(DateTime deadlineUtc)
+    {
+        var schedule = Schedule.CreateDaily(DateOnly.FromDateTime(DateTime.UtcNow.Date), new TimeOnly(9,0), "UTC", 1);
+        return Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadlineUtc, "UTC", schedule);
+    }
+
+    [Fact]
+    public async Task Transitions_active_past_deadline_to_decision_needed_and_sets_grace()
+    {
+        using var db = CreateDb();
+        var futureDeadline = DateTime.UtcNow.AddDays(5);
+        var c = NewCommitment(futureDeadline);
+        // simulate past deadline
+        typeof(Commitment).GetProperty("DeadlineUtc")!.SetValue(c, DateTime.UtcNow.AddMinutes(-5));
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        var scanner = new GraceExpiryScanner(db);
+
+        await scanner.ScanAsync();
+
+        c.Status.Should().Be(CommitmentStatus.DecisionNeeded);
+        c.GraceExpiresUtc.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Creates_final_warning_event_if_inside_final_window()
+    {
+        using var db = CreateDb();
+        var futureDeadline = DateTime.UtcNow.AddDays(5);
+        var c = NewCommitment(futureDeadline);
+        typeof(Commitment).GetProperty("DeadlineUtc")!.SetValue(c, DateTime.UtcNow.AddMinutes(-30));
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        var scanner = new GraceExpiryScanner(db);
+
+        await scanner.ScanAsync();
+
+        db.ReminderEvents.Any(r => r.CommitmentId == c.Id && r.Type == "commitment.grace_final_warning").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Auto_fails_expired_grace()
+    {
+        using var db = CreateDb();
+        var futureDeadline = DateTime.UtcNow.AddDays(5);
+        var c = NewCommitment(futureDeadline);
+        typeof(Commitment).GetProperty("DeadlineUtc")!.SetValue(c, DateTime.UtcNow.AddHours(-2));
+        // move directly to expired decision state
+        c.TransitionToDecisionNeeded(TimeSpan.FromMinutes(-1));
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        var scanner = new GraceExpiryScanner(db);
+
+        await scanner.ScanAsync();
+
+        c.Status.Should().Be(CommitmentStatus.Failed);
+    }
+}

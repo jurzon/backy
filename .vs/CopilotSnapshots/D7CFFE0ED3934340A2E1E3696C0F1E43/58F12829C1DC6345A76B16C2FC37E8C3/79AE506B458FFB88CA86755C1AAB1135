@@ -1,0 +1,153 @@
+﻿using Commitments.Api.Endpoints;
+using Commitments.Api.Validation;
+using Commitments.Domain.Entities;
+using Commitments.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+
+namespace Microsoft.AspNetCore.Builder;
+
+public static class CommitmentEndpoints
+{
+    public static IEndpointRouteBuilder MapCommitmentEndpoints(this IEndpointRouteBuilder app)
+    {
+        var group = app.MapGroup("/commitments");
+
+        group.MapPost("", async (CreateCommitmentRequest req, AppDbContext db) =>
+        {
+            var errors = CommitmentRequestValidator.Validate(req);
+            if (errors.Count > 0) return Results.ValidationProblem(errors);
+            var schedule = BuildSchedule(req.Schedule, req.Timezone);
+            var stakeMinor = (long)Math.Round(req.StakeAmount * 100m, MidpointRounding.AwayFromZero);
+            try
+            {
+                var commitment = Commitment.Create(req.UserId, req.Goal, stakeMinor, req.Currency.ToUpperInvariant(), req.DeadlineUtc, req.Timezone, schedule);
+                db.Commitments.Add(commitment);
+                await db.SaveChangesAsync();
+                return Results.Created($"/commitments/{commitment.Id}", commitment.ToSummary());
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(ex.Message, statusCode: 400);
+            }
+        }).WithName("CreateCommitment").WithOpenApi();
+
+        group.MapGet("{id:guid}", async (Guid id, AppDbContext db) =>
+        {
+            var c = await db.Commitments.AsNoTracking().Include(x=>x.CheckIns).Include(x=>x.Schedule).FirstOrDefaultAsync(x => x.Id == id);
+            return c is null ? Results.NotFound() : Results.Ok(c.ToSummary());
+        }).WithName("GetCommitment").WithOpenApi();
+
+        group.MapGet("", async (Guid userId, string? status, DateTime? from, DateTime? to, string? search, int page, int pageSize, AppDbContext db) =>
+        {
+            if (from != null && to != null && from > to)
+            {
+                return Results.ValidationProblem(new Dictionary<string, string[]>
+                {
+                    { "from", new[]{"from must be <= to"} },
+                    { "to", new[]{"to must be >= from"} }
+                });
+            }
+            if (page <= 0) page = 1;
+            if (pageSize <= 0 || pageSize > 100) pageSize = 20;
+            var q = db.Commitments.AsNoTracking().Include(x=>x.CheckIns).Include(x=>x.Schedule).Where(c => c.UserId == userId);
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CommitmentStatus>(status, true, out var st))
+                q = q.Where(c => c.Status == st);
+            if (from != null) q = q.Where(c => c.CreatedAtUtc >= from);
+            if (to != null) q = q.Where(c => c.CreatedAtUtc <= to);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                q = q.Where(c => EF.Functions.ILike(c.Goal, $"%{term}%"));
+            }
+            var total = await q.CountAsync();
+            var items = await q.OrderByDescending(c => c.CreatedAtUtc)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => c.ToSummary())
+                .ToListAsync();
+            return Results.Ok(new { page, pageSize, total, items });
+        }).WithName("ListCommitments").WithOpenApi();
+
+        // Create check-in
+        group.MapPost("{id:guid}/checkins", async (Guid id, CreateCheckInRequest body, AppDbContext db) =>
+        {
+            var commitment = await db.Commitments.Include(c => c.CheckIns).FirstOrDefaultAsync(c => c.Id == id);
+            if (commitment == null) return Results.NotFound();
+            if (commitment.Status != CommitmentStatus.Active)
+                return Results.Problem("Check-ins only allowed when Active", statusCode: 400);
+            if (DateTime.UtcNow > commitment.DeadlineUtc)
+                return Results.Problem("Past deadline", statusCode: 400);
+            var ci = commitment.AddCheckIn(body.Note, body.PhotoUrl);
+            await db.SaveChangesAsync();
+            return Results.Created($"/commitments/{id}/checkins/{ci.Id}", ci.ToResponse());
+        }).WithName("CreateCheckIn").WithOpenApi();
+
+        // List check-ins
+        group.MapGet("{id:guid}/checkins", async (Guid id, AppDbContext db) =>
+        {
+            var exists = await db.Commitments.AsNoTracking().AnyAsync(c => c.Id == id);
+            if (!exists) return Results.NotFound();
+            var list = await db.CheckIns.AsNoTracking().Where(ci => ci.CommitmentId == id)
+                .OrderByDescending(ci => ci.OccurredAtUtc)
+                .Select(ci => ci.ToResponse())
+                .ToListAsync();
+            return Results.Ok(list);
+        }).WithName("ListCheckIns").WithOpenApi();
+
+        // Snooze action (15 minutes)
+        group.MapPost("{id:guid}/actions/snooze", async (Guid id, AppDbContext db) =>
+        {
+            var c = await db.Commitments.FirstOrDefaultAsync(x => x.Id == id);
+            if (c == null) return Results.NotFound();
+            if (c.Status != CommitmentStatus.DecisionNeeded) return Results.Problem("Not in decision state", statusCode: 400);
+            if (c.GraceExpiresUtc == null) return Results.Problem("Grace not set", statusCode: 400);
+            var now = DateTime.UtcNow;
+            var newTime = now.AddMinutes(15);
+            if (newTime >= c.GraceExpiresUtc) return Results.Problem("Cannot snooze past grace expiry", statusCode: 400);
+            // schedule another final warning if still before final window
+            db.ReminderEvents.Add(new ReminderEvent
+            {
+                CommitmentId = c.Id,
+                ScheduledForUtc = newTime,
+                Type = "reminder.checkin_due"
+            });
+            await db.SaveChangesAsync();
+            return Results.Ok(new { snoozedUntil = newTime });
+        }).WithName("SnoozeDecision").WithOpenApi();
+
+        return app;
+    }
+
+    private static Schedule BuildSchedule(ScheduleDto dto, string timezone)
+    {
+        return dto.PatternType.ToLowerInvariant() switch
+        {
+            "daily" => Schedule.CreateDaily(dto.StartDate, dto.TimeOfDay, timezone, dto.Interval),
+            "weekly" => Schedule.CreateWeekly(dto.StartDate, dto.TimeOfDay, timezone, ParseWeekdayMask(dto.WeekdaysMask), dto.Interval),
+            "monthly_day" => Schedule.CreateMonthlyByDay(dto.StartDate, dto.TimeOfDay, timezone, dto.MonthDay ?? throw new ArgumentException("MonthDay required"), dto.Interval),
+            "monthly_nth" => Schedule.CreateMonthlyByNthWeekday(dto.StartDate, dto.TimeOfDay, timezone, dto.NthWeek ?? 1, dto.NthWeekday ?? 0, dto.Interval),
+            _ => throw new ArgumentException("Unknown pattern type")
+        };
+    }
+
+    private static WeekdayMask ParseWeekdayMask(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return WeekdayMask.Monday;
+        WeekdayMask mask = WeekdayMask.None;
+        foreach (var part in input.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            mask |= part.ToLowerInvariant() switch
+            {
+                "mon" => WeekdayMask.Monday,
+                "tue" => WeekdayMask.Tuesday,
+                "wed" => WeekdayMask.Wednesday,
+                "thu" => WeekdayMask.Thursday,
+                "fri" => WeekdayMask.Friday,
+                "sat" => WeekdayMask.Saturday,
+                "sun" => WeekdayMask.Sunday,
+                _ => WeekdayMask.None
+            };
+        }
+        return mask == WeekdayMask.None ? WeekdayMask.Monday : mask;
+    }
+}

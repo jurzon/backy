@@ -10,12 +10,73 @@
         "dependencies": {
           "Commitments.Domain": "1.0.0",
           "Commitments.Infrastructure": "1.0.0",
+          "Hangfire.AspNetCore": "1.8.14",
+          "Hangfire.Core": "1.8.14",
+          "Hangfire.PostgreSql": "1.20.12",
           "Microsoft.AspNetCore.OpenApi": "8.0.8",
           "Microsoft.EntityFrameworkCore.Design": "8.0.8",
           "Swashbuckle.AspNetCore": "6.5.0"
         },
         "runtime": {
           "Commitments.Api.dll": {}
+        }
+      },
+      "Dapper/2.0.123": {
+        "runtime": {
+          "lib/net5.0/Dapper.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.123.33578"
+          }
+        }
+      },
+      "Hangfire.AspNetCore/1.8.14": {
+        "dependencies": {
+          "Hangfire.NetCore": "1.8.14"
+        },
+        "runtime": {
+          "lib/netcoreapp3.0/Hangfire.AspNetCore.dll": {
+            "assemblyVersion": "1.8.14.0",
+            "fileVersion": "1.8.14.0"
+          }
+        }
+      },
+      "Hangfire.Core/1.8.14": {
+        "dependencies": {
+          "Newtonsoft.Json": "11.0.1"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.Core.dll": {
+            "assemblyVersion": "1.8.14.0",
+            "fileVersion": "1.8.14.0"
+          }
+        }
+      },
+      "Hangfire.NetCore/1.8.14": {
+        "dependencies": {
+          "Hangfire.Core": "1.8.14",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Hosting.Abstractions": "3.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
+        },
+        "runtime": {
+          "lib/netstandard2.1/Hangfire.NetCore.dll": {
+            "assemblyVersion": "1.8.14.0",
+            "fileVersion": "1.8.14.0"
+          }
+        }
+      },
+      "Hangfire.PostgreSql/1.20.12": {
+        "dependencies": {
+          "Dapper": "2.0.123",
+          "Hangfire.Core": "1.8.14",
+          "Microsoft.CSharp": "4.7.0",
+          "Npgsql": "8.0.4"
+        },
+        "runtime": {
+          "lib/netstandard2.0/Hangfire.PostgreSql.dll": {
+            "assemblyVersion": "1.20.12.0",
+            "fileVersion": "1.20.12.0"
+          }
         }
       },
       "Humanizer.Core/2.14.1": {
@@ -266,6 +327,7 @@
           }
         }
       },
+      "Microsoft.CSharp/4.7.0": {},
       "Microsoft.EntityFrameworkCore/8.0.8": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Abstractions": "8.0.8",
@@ -354,6 +416,19 @@
           }
         }
       },
+      "Microsoft.Extensions.FileProviders.Abstractions/3.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "8.0.0"
+        }
+      },
+      "Microsoft.Extensions.Hosting.Abstractions/3.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
+          "Microsoft.Extensions.FileProviders.Abstractions": "3.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0"
+        }
+      },
       "Microsoft.Extensions.Logging/8.0.0": {
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection": "8.0.0",
@@ -389,6 +464,14 @@
           "lib/netstandard2.0/Mono.TextTemplating.dll": {
             "assemblyVersion": "2.2.0.0",
             "fileVersion": "2.2.1.1"
+          }
+        }
+      },
+      "Newtonsoft.Json/11.0.1": {
+        "runtime": {
+          "lib/netstandard2.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "11.0.0.0",
+            "fileVersion": "11.0.1.21818"
           }
         }
       },
@@ -576,6 +659,41 @@
       "serviceable": false,
       "sha512": ""
     },
+    "Dapper/2.0.123": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-RDFF4rBLLmbpi6pwkY7q/M6UXHRJEOerplDGE5jwEkP/JGJnBauAClYavNKJPW1yOTWRPIyfj4is3EaJxQXILQ==",
+      "path": "dapper/2.0.123",
+      "hashPath": "dapper.2.0.123.nupkg.sha512"
+    },
+    "Hangfire.AspNetCore/1.8.14": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-aTPzKN/g9SW30QB1SLTOMuckKqTVL1YAhtEpWll4LPbPTgyeBHJTChdRhrN127fj+mqJ6P4P7+HJBhNYUFTfNw==",
+      "path": "hangfire.aspnetcore/1.8.14",
+      "hashPath": "hangfire.aspnetcore.1.8.14.nupkg.sha512"
+    },
+    "Hangfire.Core/1.8.14": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-tj/+J8/UdaxydFX6VQr5IEyBtVbAOvkQ8X8tIQKwY9zlpmK83hP4iHEQQQ26zzGUpcE1HlPc6PBUv0NgUDXS3A==",
+      "path": "hangfire.core/1.8.14",
+      "hashPath": "hangfire.core.1.8.14.nupkg.sha512"
+    },
+    "Hangfire.NetCore/1.8.14": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-fBLdsxWYFdrQuenvVHEj/z8nOXoOTqpWIl4qYoinBAUCVmp4qlxfFsY3Aq3VVbwket0wBH472aG2LAmYm6hjxw==",
+      "path": "hangfire.netcore/1.8.14",
+      "hashPath": "hangfire.netcore.1.8.14.nupkg.sha512"
+    },
+    "Hangfire.PostgreSql/1.20.12": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-KvozigeVgbYSinFmaj5qQWRaBG7ey/S73UP6VLIOPcP1UrZO0/6hSw4jN53TKpWP2UsiMuYONRmQbFDxGAi4ug==",
+      "path": "hangfire.postgresql/1.20.12",
+      "hashPath": "hangfire.postgresql.1.20.12.nupkg.sha512"
+    },
     "Humanizer.Core/2.14.1": {
       "type": "package",
       "serviceable": true,
@@ -631,6 +749,13 @@
       "sha512": "sha512-l4dDRmGELXG72XZaonnOeORyD/T5RpEu5LGHOUIhnv+MmUWDY/m1kWXGwtcgQ5CJ5ynkFiRnIYzTKXYjUs7rbw==",
       "path": "microsoft.codeanalysis.workspaces.common/4.5.0",
       "hashPath": "microsoft.codeanalysis.workspaces.common.4.5.0.nupkg.sha512"
+    },
+    "Microsoft.CSharp/4.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA==",
+      "path": "microsoft.csharp/4.7.0",
+      "hashPath": "microsoft.csharp.4.7.0.nupkg.sha512"
     },
     "Microsoft.EntityFrameworkCore/8.0.8": {
       "type": "package",
@@ -716,6 +841,20 @@
       "path": "microsoft.extensions.dependencymodel/8.0.1",
       "hashPath": "microsoft.extensions.dependencymodel.8.0.1.nupkg.sha512"
     },
+    "Microsoft.Extensions.FileProviders.Abstractions/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-kahEeykb6FyQytoZNNXuz74X85B4weIEt8Kd+0klK48bkXDWOIHAOvNjlGsPMcS9CL935Te8QGQS83JqCbpdHA==",
+      "path": "microsoft.extensions.fileproviders.abstractions/3.0.0",
+      "hashPath": "microsoft.extensions.fileproviders.abstractions.3.0.0.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Hosting.Abstractions/3.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-qeDWS5ErmkUN96BdQqpmeCmLk5HJWQ/SPw3ux5v5/Qb0hKZS5wojBMulnBC7JUEiBwg7Ir71Yjf1lFiRT5MdtQ==",
+      "path": "microsoft.extensions.hosting.abstractions/3.0.0",
+      "hashPath": "microsoft.extensions.hosting.abstractions.3.0.0.nupkg.sha512"
+    },
     "Microsoft.Extensions.Logging/8.0.0": {
       "type": "package",
       "serviceable": true,
@@ -757,6 +896,13 @@
       "sha512": "sha512-KZYeKBET/2Z0gY1WlTAK7+RHTl7GSbtvTLDXEZZojUdAPqpQNDL6tHv7VUpqfX5VEOh+uRGKaZXkuD253nEOBQ==",
       "path": "mono.texttemplating/2.2.1",
       "hashPath": "mono.texttemplating.2.2.1.nupkg.sha512"
+    },
+    "Newtonsoft.Json/11.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pNN4l+J6LlpIvHOeNdXlwxv39NPJ2B5klz+Rd2UQZIx30Squ5oND1Yy3wEAUoKn0GPUj6Yxt9lxlYWQqfZcvKg==",
+      "path": "newtonsoft.json/11.0.1",
+      "hashPath": "newtonsoft.json.11.0.1.nupkg.sha512"
     },
     "Npgsql/8.0.4": {
       "type": "package",

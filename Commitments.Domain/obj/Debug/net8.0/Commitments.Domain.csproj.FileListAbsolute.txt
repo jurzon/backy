@@ -5,6 +5,7 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitment
 C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.AssemblyInfoInputs.cache
 C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.AssemblyInfo.cs
 C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.csproj.CoreCompileInputs.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.sourcelink.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\refint\Commitments.Domain.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Domain\obj\Debug\net8.0\Commitments.Domain.pdb

@@ -1,0 +1,80 @@
+﻿using Commitments.Api.Background;
+using Commitments.Domain.Entities;
+using Commitments.Infrastructure;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Commitments.Domain.Abstractions;
+
+namespace Commitments.Tests.Background;
+
+public class GraceExpiryScannerTests
+{
+    // TODO: Replace Schedule.PreviewNextOccurrences DateTime.UtcNow usage with IClock to avoid needing large deadline buffers in tests.
+    private sealed class FakeClock : IClock { public DateTime UtcNow { get; set; } }
+
+    private AppDbContext CreateDb() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+
+    private Commitment NewCommitment(DateTime deadlineUtc)
+    {
+        // Ensure start date is in the past so that a daily occurrence exists before any reasonable future deadline.
+        var startDate = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2);
+        var schedule = Schedule.CreateDaily(startDate, new TimeOnly(9,0), "UTC", 1);
+        return Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadlineUtc, "UTC", schedule);
+    }
+
+    [Fact]
+    public async Task Transitions_active_past_deadline_to_decision_needed_and_sets_grace()
+    {
+        using var db = CreateDb();
+        var clock = new FakeClock { UtcNow = DateTime.UtcNow };
+        var deadline = clock.UtcNow.AddDays(3);
+        var c = NewCommitment(deadline);
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        // advance beyond deadline
+        clock.UtcNow = deadline.AddMinutes(5);
+        var scanner = new GraceExpiryScanner(db, clock);
+        await scanner.ScanAsync();
+        c.Status.Should().Be(CommitmentStatus.DecisionNeeded);
+        c.GraceExpiresUtc.Should().Be(deadline.AddMinutes(60));
+    }
+
+    [Fact]
+    public async Task Creates_final_warning_event_if_inside_final_window()
+    {
+        using var db = CreateDb();
+        var clock = new FakeClock { UtcNow = DateTime.UtcNow };
+        var deadline = clock.UtcNow.AddDays(3);
+        var c = NewCommitment(deadline);
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        // just after deadline
+        clock.UtcNow = deadline.AddMinutes(1);
+        var scanner = new GraceExpiryScanner(db, clock);
+        await scanner.ScanAsync();
+        // final warning scheduled at deadline+45m
+        var fw = db.ReminderEvents.FirstOrDefault(r => r.CommitmentId == c.Id && r.Type == "commitment.grace_final_warning");
+        fw.Should().NotBeNull();
+        fw!.ScheduledForUtc.Should().Be(deadline.AddMinutes(45));
+    }
+
+    [Fact]
+    public async Task Auto_fails_expired_grace()
+    {
+        using var db = CreateDb();
+        var clock = new FakeClock { UtcNow = DateTime.UtcNow };
+        var deadline = clock.UtcNow.AddDays(3);
+        var c = NewCommitment(deadline);
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        var scanner = new GraceExpiryScanner(db, clock);
+        // pass deadline -> decision
+        clock.UtcNow = deadline.AddMinutes(2);
+        await scanner.ScanAsync();
+        c.Status.Should().Be(CommitmentStatus.DecisionNeeded);
+        // advance past grace expiry (deadline+60m)
+        clock.UtcNow = deadline.AddMinutes(61);
+        await scanner.ScanAsync();
+        c.Status.Should().Be(CommitmentStatus.Failed);
+    }
+}

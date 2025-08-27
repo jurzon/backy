@@ -55,6 +55,18 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "Hangfire.AspNetCore": {
+              "target": "Package",
+              "version": "[1.8.14, )"
+            },
+            "Hangfire.Core": {
+              "target": "Package",
+              "version": "[1.8.14, )"
+            },
+            "Hangfire.PostgreSql": {
+              "target": "Package",
+              "version": "[1.20.12, )"
+            },
             "Microsoft.AspNetCore.OpenApi": {
               "target": "Package",
               "version": "[8.0.8, )"
@@ -268,6 +280,9 @@
               },
               "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Domain\\Commitments.Domain.csproj": {
                 "projectPath": "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Domain\\Commitments.Domain.csproj"
+              },
+              "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Infrastructure\\Commitments.Infrastructure.csproj": {
+                "projectPath": "C:\\Users\\zonne\\Source\\Repos\\backy\\Commitments.Infrastructure\\Commitments.Infrastructure.csproj"
               }
             }
           }
@@ -291,6 +306,10 @@
             "FluentAssertions": {
               "target": "Package",
               "version": "[6.12.0, )"
+            },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[8.0.8, )"
             },
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",

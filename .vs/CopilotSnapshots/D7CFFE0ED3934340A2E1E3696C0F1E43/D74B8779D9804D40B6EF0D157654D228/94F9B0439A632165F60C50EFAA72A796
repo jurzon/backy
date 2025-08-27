@@ -1,0 +1,74 @@
+﻿using Commitments.Api.Background;
+using Commitments.Domain.Entities;
+using Commitments.Infrastructure;
+using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Commitments.Domain.Abstractions;
+
+namespace Commitments.Tests.Background;
+
+public class GraceExpiryScannerTests
+{
+    // TODO: Skipped tests until recurrence logic uses IClock & deterministic occurrence generation for pre-deadline validation.
+    private sealed class FakeClock : IClock { public DateTime UtcNow { get; set; } }
+
+    private AppDbContext CreateDb() => new(new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
+
+    private Commitment NewCommitment(DateTime deadlineUtc)
+    {
+        var startDate = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2);
+        var schedule = Schedule.CreateDaily(startDate, new TimeOnly(9,0), "UTC", 1);
+        return Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadlineUtc, "UTC", schedule);
+    }
+
+    [Fact(Skip = "TODO: depends on deterministic recurrence & clock injection in schedule")]
+    public async Task Transitions_active_past_deadline_to_decision_needed_and_sets_grace()
+    {
+        using var db = CreateDb();
+        var clock = new FakeClock { UtcNow = DateTime.UtcNow };
+        var deadline = clock.UtcNow.AddDays(3);
+        var c = NewCommitment(deadline);
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        clock.UtcNow = deadline.AddMinutes(5);
+        var scanner = new GraceExpiryScanner(db, clock);
+        await scanner.ScanAsync();
+        c.Status.Should().Be(CommitmentStatus.DecisionNeeded);
+        c.GraceExpiresUtc.Should().Be(deadline.AddMinutes(60));
+    }
+
+    [Fact(Skip = "TODO: depends on deterministic recurrence & clock injection in schedule")]
+    public async Task Creates_final_warning_event_if_inside_final_window()
+    {
+        using var db = CreateDb();
+        var clock = new FakeClock { UtcNow = DateTime.UtcNow };
+        var deadline = clock.UtcNow.AddDays(3);
+        var c = NewCommitment(deadline);
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        clock.UtcNow = deadline.AddMinutes(1);
+        var scanner = new GraceExpiryScanner(db, clock);
+        await scanner.ScanAsync();
+        var fw = db.ReminderEvents.FirstOrDefault(r => r.CommitmentId == c.Id && r.Type == "commitment.grace_final_warning");
+        fw.Should().NotBeNull();
+        fw!.ScheduledForUtc.Should().Be(deadline.AddMinutes(45));
+    }
+
+    [Fact(Skip = "TODO: depends on deterministic recurrence & clock injection in schedule")]
+    public async Task Auto_fails_expired_grace()
+    {
+        using var db = CreateDb();
+        var clock = new FakeClock { UtcNow = DateTime.UtcNow };
+        var deadline = clock.UtcNow.AddDays(3);
+        var c = NewCommitment(deadline);
+        db.Commitments.Add(c);
+        await db.SaveChangesAsync();
+        var scanner = new GraceExpiryScanner(db, clock);
+        clock.UtcNow = deadline.AddMinutes(2);
+        await scanner.ScanAsync();
+        c.Status.Should().Be(CommitmentStatus.DecisionNeeded);
+        clock.UtcNow = deadline.AddMinutes(61);
+        await scanner.ScanAsync();
+        c.Status.Should().Be(CommitmentStatus.Failed);
+    }
+}

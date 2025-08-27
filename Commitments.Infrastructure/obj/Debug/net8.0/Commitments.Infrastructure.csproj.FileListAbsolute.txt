@@ -9,6 +9,7 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Co
 C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.AssemblyInfoInputs.cache
 C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.AssemblyInfo.cs
 C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.sourcelink.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitme.41B35222.Up2Date
 C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\Commitments.Infrastructure.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Infrastructure\obj\Debug\net8.0\refint\Commitments.Infrastructure.dll

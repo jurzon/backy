@@ -106,6 +106,22 @@ public class Schedule
         return candidate;
     }
 
+    public int CountOccurrencesUpTo(DateTime untilExclusiveUtc, DateTime deadlineUtc, int safetyCap = 1000)
+    {
+        var count = 0;
+        var first = new DateTime(StartDate.Year, StartDate.Month, StartDate.Day, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second, DateTimeKind.Utc);
+        if (first >= untilExclusiveUtc || first >= deadlineUtc) return 0;
+        var current = first;
+        while (current < untilExclusiveUtc && current < deadlineUtc && count < safetyCap)
+        {
+            count++;
+            var next = NextOccurrence(current, deadlineUtc);
+            if (next == null) break;
+            current = next.Value;
+        }
+        return count;
+    }
+
     private static WeekdayMask DayOfWeekToMask(DayOfWeek dow) => dow switch
     {
         DayOfWeek.Monday => WeekdayMask.Monday,

@@ -1,0 +1,77 @@
+﻿using System;
+using Commitments.Domain.Entities;
+using FluentAssertions;
+
+namespace Commitments.Tests.Domain;
+
+public class CommitmentTransitionTests
+{
+    // TODO: Replace direct DateTime.UtcNow usage with IClock abstraction for deterministic tests once Schedule supports it.
+    private Commitment NewActive(DateTime deadlineUtc)
+    {
+        // start date in past so occurrence exists before deadline
+        var startDate = DateOnly.FromDateTime(DateTime.UtcNow.Date).AddDays(-2);
+        var schedule = Schedule.CreateDaily(startDate, new TimeOnly(8,0), "UTC", 1);
+        return Commitment.Create(Guid.NewGuid(), "Goal", 100, "EUR", deadlineUtc, "UTC", schedule);
+    }
+
+    [Fact]
+    public void Cannot_cancel_when_not_active()
+    {
+        var c = NewActive(DateTime.UtcNow.AddDays(2));
+        c.Fail();
+        var act = () => c.Cancel();
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Cannot_complete_unless_decision_needed()
+    {
+        var c = NewActive(DateTime.UtcNow.AddDays(2));
+        var act = () => c.Complete();
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Complete_works_in_decision_needed()
+    {
+        var c = NewActive(DateTime.UtcNow.AddHours(2)); // >=1h ahead
+        c.TransitionToDecisionNeeded(TimeSpan.FromMinutes(30));
+        c.Complete();
+        c.Status.Should().Be(CommitmentStatus.Completed);
+    }
+
+    [Fact]
+    public void Fail_allowed_from_active()
+    {
+        var c = NewActive(DateTime.UtcNow.AddDays(1));
+        c.Fail();
+        c.Status.Should().Be(CommitmentStatus.Failed);
+    }
+
+    [Fact]
+    public void Fail_allowed_from_decision_needed()
+    {
+        var c = NewActive(DateTime.UtcNow.AddHours(2));
+        c.TransitionToDecisionNeeded(TimeSpan.FromMinutes(10));
+        c.Fail();
+        c.Status.Should().Be(CommitmentStatus.Failed);
+    }
+
+    [Fact]
+    public void Cannot_delete_active()
+    {
+        var c = NewActive(DateTime.UtcNow.AddDays(1));
+        var act = () => c.SoftDelete();
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Cannot_cancel_inside_locked_window()
+    {
+        // editing locked at deadline-24h; use deadline within 4h to be inside lock window
+        var c = NewActive(DateTime.UtcNow.AddHours(4));
+        var act = () => c.Cancel();
+        act.Should().Throw<InvalidOperationException>();
+    }
+}

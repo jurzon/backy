@@ -14,11 +14,17 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Commitments
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Commitments.Tests.runtimeconfig.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Commitments.Tests.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Commitments.Tests.pdb
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Dapper.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\FluentAssertions.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Hangfire.AspNetCore.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Hangfire.Core.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Hangfire.NetCore.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Hangfire.PostgreSql.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.AspNetCore.OpenApi.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.VisualStudio.CodeCoverage.Shim.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Abstractions.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.InMemory.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Relational.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.OpenApi.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Microsoft.TestPlatform.CoreUtilities.dll
@@ -117,6 +123,7 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments.Tests.AssemblyInfoInputs.cache
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments.Tests.AssemblyInfo.cs
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments.Tests.csproj.CoreCompileInputs.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments.Tests.sourcelink.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitme.1BC4F9CE.Up2Date
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments.Tests.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\refint\Commitments.Tests.dll

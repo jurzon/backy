@@ -1,0 +1,49 @@
+﻿using Commitments.Domain.Entities;
+
+namespace Commitments.Api.Endpoints;
+
+public record CreateCommitmentRequest(
+    Guid UserId,
+    string Goal,
+    decimal StakeAmount,
+    string Currency,
+    DateTime DeadlineUtc,
+    string Timezone,
+    ScheduleDto Schedule
+);
+
+public record ScheduleDto(
+    string PatternType,
+    int Interval,
+    string? WeekdaysMask,
+    int? MonthDay,
+    int? NthWeek,
+    int? NthWeekday,
+    DateOnly StartDate,
+    TimeOnly TimeOfDay
+);
+
+public record CommitmentSummaryResponse(
+    Guid Id,
+    string Goal,
+    string Currency,
+    long StakeAmountMinor,
+    DateTime DeadlineUtc,
+    string Status
+);
+
+public record CreateCheckInRequest(string? Note, string? PhotoUrl);
+public record CheckInResponse(Guid Id, DateTime OccurredAtUtc, string? Note, string? PhotoUrl);
+
+public static class CommitmentMappings
+{
+    public static CommitmentSummaryResponse ToSummary(this Commitment c) => new(
+        c.Id,
+        c.Goal,
+        c.Currency,
+        c.StakeAmountMinor,
+        c.DeadlineUtc,
+        c.Status.ToString());
+
+    public static CheckInResponse ToResponse(this CheckIn ci) => new(ci.Id, ci.OccurredAtUtc, ci.Note, ci.PhotoUrl);
+}

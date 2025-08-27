@@ -3,6 +3,7 @@ using Commitments.Api.Validation;
 using Commitments.Domain.Entities;
 using Commitments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Microsoft.AspNetCore.Builder;
 
@@ -22,6 +23,7 @@ public static class CommitmentEndpoints
             {
                 var commitment = Commitment.Create(req.UserId, req.Goal, stakeMinor, req.Currency.ToUpperInvariant(), req.DeadlineUtc, req.Timezone, schedule);
                 db.Commitments.Add(commitment);
+                db.AuditLogs.Add(new AuditLog { CommitmentId = commitment.Id, UserId = commitment.UserId, EventType = "commitment.created", DataJson = JsonSerializer.Serialize(new { commitment.Id, commitment.Goal }) });
                 await db.SaveChangesAsync();
                 return Results.Created($"/commitments/{commitment.Id}", commitment.ToSummary());
             }
@@ -33,7 +35,7 @@ public static class CommitmentEndpoints
 
         group.MapGet("{id:guid}", async (Guid id, AppDbContext db) =>
         {
-            var c = await db.Commitments.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            var c = await db.Commitments.AsNoTracking().Include(x=>x.CheckIns).Include(x=>x.Schedule).FirstOrDefaultAsync(x => x.Id == id);
             return c is null ? Results.NotFound() : Results.Ok(c.ToSummary());
         }).WithName("GetCommitment").WithOpenApi();
 
@@ -49,7 +51,7 @@ public static class CommitmentEndpoints
             }
             if (page <= 0) page = 1;
             if (pageSize <= 0 || pageSize > 100) pageSize = 20;
-            var q = db.Commitments.AsNoTracking().Where(c => c.UserId == userId);
+            var q = db.Commitments.AsNoTracking().Include(x=>x.CheckIns).Include(x=>x.Schedule).Where(c => c.UserId == userId);
             if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<CommitmentStatus>(status, true, out var st))
                 q = q.Where(c => c.Status == st);
             if (from != null) q = q.Where(c => c.CreatedAtUtc >= from);
@@ -78,6 +80,7 @@ public static class CommitmentEndpoints
             if (DateTime.UtcNow > commitment.DeadlineUtc)
                 return Results.Problem("Past deadline", statusCode: 400);
             var ci = commitment.AddCheckIn(body.Note, body.PhotoUrl);
+            db.AuditLogs.Add(new AuditLog { CommitmentId = commitment.Id, UserId = commitment.UserId, EventType = "checkin.created", DataJson = JsonSerializer.Serialize(new { ci.Id }) });
             await db.SaveChangesAsync();
             return Results.Created($"/commitments/{id}/checkins/{ci.Id}", ci.ToResponse());
         }).WithName("CreateCheckIn").WithOpenApi();
@@ -93,6 +96,87 @@ public static class CommitmentEndpoints
                 .ToListAsync();
             return Results.Ok(list);
         }).WithName("ListCheckIns").WithOpenApi();
+
+        // Snooze action (15 minutes)
+        group.MapPost("{id:guid}/actions/snooze", async (Guid id, AppDbContext db) =>
+        {
+            var c = await db.Commitments.FirstOrDefaultAsync(x => x.Id == id);
+            if (c == null) return Results.NotFound();
+            if (c.Status != CommitmentStatus.DecisionNeeded) return Results.Problem("Not in decision state", statusCode: 400);
+            if (c.GraceExpiresUtc == null) return Results.Problem("Grace not set", statusCode: 400);
+            var now = DateTime.UtcNow;
+            var newTime = now.AddMinutes(15);
+            if (newTime >= c.GraceExpiresUtc) return Results.Problem("Cannot snooze past grace expiry", statusCode: 400);
+            db.ReminderEvents.Add(new ReminderEvent
+            {
+                CommitmentId = c.Id,
+                ScheduledForUtc = newTime,
+                Type = "reminder.checkin_due"
+            });
+            db.AuditLogs.Add(new AuditLog { CommitmentId = c.Id, UserId = c.UserId, EventType = "commitment.snoozed", DataJson = JsonSerializer.Serialize(new { newTime }) });
+            await db.SaveChangesAsync();
+            return Results.Ok(new { snoozedUntil = newTime });
+        }).WithName("SnoozeDecision").WithOpenApi();
+
+        // Cancel
+        group.MapPost("{id:guid}/actions/cancel", async (Guid id, AppDbContext db) =>
+        {
+            var c = await db.Commitments.FirstOrDefaultAsync(x => x.Id == id);
+            if (c == null) return Results.NotFound();
+            try
+            {
+                c.Cancel();
+                db.AuditLogs.Add(new AuditLog { CommitmentId = c.Id, UserId = c.UserId, EventType = "commitment.cancelled", DataJson = JsonSerializer.Serialize(new { c.Id }) });
+                await db.SaveChangesAsync();
+                return Results.Ok(c.ToSummary());
+            }
+            catch (Exception ex) { return Results.Problem(ex.Message, statusCode: 400); }
+        }).WithName("CancelCommitment").WithOpenApi();
+
+        // Complete
+        group.MapPost("{id:guid}/actions/complete", async (Guid id, AppDbContext db) =>
+        {
+            var c = await db.Commitments.FirstOrDefaultAsync(x => x.Id == id);
+            if (c == null) return Results.NotFound();
+            try
+            {
+                c.Complete();
+                db.AuditLogs.Add(new AuditLog { CommitmentId = c.Id, UserId = c.UserId, EventType = "commitment.completed", DataJson = JsonSerializer.Serialize(new { c.Id }) });
+                await db.SaveChangesAsync();
+                return Results.Ok(c.ToSummary());
+            }
+            catch (Exception ex) { return Results.Problem(ex.Message, statusCode: 400); }
+        }).WithName("CompleteCommitment").WithOpenApi();
+
+        // Fail
+        group.MapPost("{id:guid}/actions/fail", async (Guid id, AppDbContext db) =>
+        {
+            var c = await db.Commitments.FirstOrDefaultAsync(x => x.Id == id);
+            if (c == null) return Results.NotFound();
+            try
+            {
+                c.Fail();
+                db.AuditLogs.Add(new AuditLog { CommitmentId = c.Id, UserId = c.UserId, EventType = "commitment.failed", DataJson = JsonSerializer.Serialize(new { c.Id }) });
+                await db.SaveChangesAsync();
+                return Results.Ok(c.ToSummary());
+            }
+            catch (Exception ex) { return Results.Problem(ex.Message, statusCode: 400); }
+        }).WithName("FailCommitment").WithOpenApi();
+
+        // Delete
+        group.MapPost("{id:guid}/actions/delete", async (Guid id, AppDbContext db) =>
+        {
+            var c = await db.Commitments.FirstOrDefaultAsync(x => x.Id == id);
+            if (c == null) return Results.NotFound();
+            try
+            {
+                c.SoftDelete();
+                db.AuditLogs.Add(new AuditLog { CommitmentId = c.Id, UserId = c.UserId, EventType = "commitment.deleted", DataJson = JsonSerializer.Serialize(new { c.Id }) });
+                await db.SaveChangesAsync();
+                return Results.Ok(c.ToSummary());
+            }
+            catch (Exception ex) { return Results.Problem(ex.Message, statusCode: 400); }
+        }).WithName("DeleteCommitment").WithOpenApi();
 
         return app;
     }

@@ -29,7 +29,9 @@ public record CommitmentSummaryResponse(
     string Currency,
     long StakeAmountMinor,
     DateTime DeadlineUtc,
-    string Status
+    string Status,
+    double ProgressPercent,
+    string RiskBadge
 );
 
 public record CreateCheckInRequest(string? Note, string? PhotoUrl);
@@ -37,13 +39,37 @@ public record CheckInResponse(Guid Id, DateTime OccurredAtUtc, string? Note, str
 
 public static class CommitmentMappings
 {
-    public static CommitmentSummaryResponse ToSummary(this Commitment c) => new(
-        c.Id,
-        c.Goal,
-        c.Currency,
-        c.StakeAmountMinor,
-        c.DeadlineUtc,
-        c.Status.ToString());
+    public static CommitmentSummaryResponse ToSummary(this Commitment c)
+    {
+        var now = DateTime.UtcNow;
+        var total = (c.DeadlineUtc - c.CreatedAtUtc).TotalSeconds;
+        var elapsed = Math.Clamp((now - c.CreatedAtUtc).TotalSeconds, 0, total <= 0 ? 1 : total);
+        var progress = total <= 0 ? 100 : Math.Min(100, (elapsed / total) * 100);
+        var risk = ComputeRisk(c, now, progress);
+        return new CommitmentSummaryResponse(
+            c.Id,
+            c.Goal,
+            c.Currency,
+            c.StakeAmountMinor,
+            c.DeadlineUtc,
+            c.Status.ToString(),
+            Math.Round(progress, 2),
+            risk
+        );
+    }
+
+    private static string ComputeRisk(Commitment c, DateTime now, double progressPercent)
+    {
+        if (c.Status == CommitmentStatus.DecisionNeeded) return "DecisionNeeded";
+        if (c.Status != CommitmentStatus.Active) return c.Status.ToString();
+        if (c.Schedule == null) return "OnTrack";
+        var expected = c.Schedule.CountOccurrencesUpTo(now, c.DeadlineUtc);
+        var actual = c.CheckIns.Count;
+        double ratio = expected == 0 ? 1 : (double)actual / expected;
+        var timeRemaining = c.DeadlineUtc - now;
+        if (timeRemaining.TotalHours < 48 || (progressPercent > 50 && ratio < 0.25)) return "AtRisk";
+        return "OnTrack";
+    }
 
     public static CheckInResponse ToResponse(this CheckIn ci) => new(ci.Id, ci.OccurredAtUtc, ci.Note, ci.PhotoUrl);
 }

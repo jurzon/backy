@@ -6,6 +6,11 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Commitments.A
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Commitments.Api.runtimeconfig.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Commitments.Api.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Commitments.Api.pdb
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Dapper.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Hangfire.AspNetCore.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Hangfire.Core.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Hangfire.NetCore.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Hangfire.PostgreSql.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Humanizer.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Microsoft.AspNetCore.OpenApi.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Microsoft.Bcl.AsyncInterfaces.dll
@@ -20,6 +25,7 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Microsoft.Ent
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Microsoft.Extensions.DependencyModel.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Microsoft.OpenApi.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Mono.TextTemplating.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Newtonsoft.Json.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Npgsql.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
@@ -95,6 +101,7 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\Commitments.A
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\Commitments.Api.csproj.CoreCompileInputs.cache
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\Commitments.Api.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\Commitments.Api.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\Commitments.Api.sourcelink.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\rjimswa.dswa.cache.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
