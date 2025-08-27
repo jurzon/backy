@@ -17,33 +17,99 @@ else if (_c == null)
 }
 else
 {
-    <dl class="row">
-        <dt class="col-sm-3">Goal</dt><dd class="col-sm-9">@_c.Goal</dd>
-        <dt class="col-sm-3">Status</dt><dd class="col-sm-9">@_c.Status</dd>
-        <dt class="col-sm-3">Progress</dt><dd class="col-sm-9">@_c.ProgressPercent%</dd>
-        <dt class="col-sm-3">Risk</dt><dd class="col-sm-9">@_c.RiskBadge</dd>
-        <dt class="col-sm-3">Deadline</dt><dd class="col-sm-9">@_c.DeadlineUtc.ToString("u")</dd>
-    </dl>
-    <div class="mb-3">
-        <button class="btn btn-sm btn-warning me-2" disabled="@_busy" @onclick="() => DoAction(Api.CancelAsync)">Cancel</button>
-        <button class="btn btn-sm btn-success me-2" disabled="@_busy" @onclick="() => DoAction(Api.CompleteAsync)">Complete</button>
-        <button class="btn btn-sm btn-danger me-2" disabled="@_busy" @onclick="() => DoAction(Api.FailAsync)">Fail</button>
-        <button class="btn btn-sm btn-outline-danger me-2" disabled="@_busy" @onclick="() => DoAction(Api.DeleteAsync)">Delete</button>
+    <div class="d-flex justify-content-between align-items-center">
+        <h4>@_c.Goal</h4>
+        <span class="badge bg-secondary">@_c.Status</span>
     </div>
-    <h5>Create Check-In</h5>
-    <EditForm Model="_checkIn" OnValidSubmit="CreateCheckIn">
-        <InputTextArea class="form-control mb-2" @bind-Value="_checkIn.Note" placeholder="Note (optional)" />
-        <button class="btn btn-primary btn-sm" disabled="@_busy">Add Check-In</button>
-    </EditForm>
-    @if (_checkInMessage != null)
-    {
-        <div class="alert alert-secondary mt-2">@_checkInMessage</div>
-    }
+    <p><strong>Deadline:</strong> @_c.DeadlineUtc.ToString("u") | <strong>Progress:</strong> @_c.ProgressPercent% | <strong>Risk:</strong> @_c.RiskBadge</p>
+
+    <div class="mb-3">
+        <button class="btn btn-sm btn-primary me-2" @onclick="ShowCheckInModal">New Check-In</button>
+        <button class="btn btn-sm btn-warning me-2" @onclick="@(() => ConfirmAction("Cancel", Api.CancelAsync))">Cancel</button>
+        <button class="btn btn-sm btn-success me-2" @onclick="@(() => ConfirmAction("Complete", Api.CompleteAsync))">Complete</button>
+        <button class="btn btn-sm btn-danger me-2" @onclick="@(() => ConfirmAction("Fail", Api.FailAsync))">Fail</button>
+        <button class="btn btn-sm btn-outline-danger" @onclick="@(() => ConfirmAction("Delete", Api.DeleteAsync))">Delete</button>
+    </div>
+
     @if (_actionMessage != null)
     {
-        <div class="alert alert-info mt-2">@_actionMessage</div>
+        <div class="alert alert-info">@_actionMessage</div>
     }
+
+    <h5>Recent Check-Ins</h5>
+    @if (_checkInsLoading)
+    {
+        <p><em>Loading check-ins...</em></p>
+    }
+    else if (_checkIns.Count == 0)
+    {
+        <p class="text-muted">No check-ins yet.</p>
+    }
+    else
+    {
+        <table class="table table-sm">
+            <thead><tr><th>When (UTC)</th><th>Note</th></tr></thead>
+            <tbody>
+            @foreach (var ci in _checkIns)
+            {
+                <tr>
+                    <td>@ci.OccurredAtUtc.ToString("u")</td>
+                    <td>@ci.Note</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+
     <a class="btn btn-secondary mt-3" href="/commitments">Back</a>
+}
+
+<!-- Check-In Modal -->
+@if (_showCheckInModal)
+{
+    <div class="modal fade show d-block" style="background:rgba(0,0,0,.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Check-In</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCheckInModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_checkInMessage != null)
+                    {
+                        <div class="alert alert-secondary">@_checkInMessage</div>
+                    }
+                    <EditForm Model="_checkIn" OnValidSubmit="CreateCheckIn">
+                        <InputTextArea class="form-control mb-2" @bind-Value="_checkIn.Note" placeholder="Note (optional)" />
+                        <button class="btn btn-primary btn-sm" disabled="@_busy">Save</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm ms-2" @onclick="CloseCheckInModal">Cancel</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Confirm Action Modal -->
+@if (_confirmAction != null)
+{
+    <div class="modal fade show d-block" style="background:rgba(0,0,0,.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm @_confirmActionLabel</h5>
+                    <button type="button" class="btn-close" @onclick="CancelConfirm"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to @_confirmActionLabel this commitment?</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary btn-sm" @onclick="CancelConfirm">Close</button>
+                    <button class="btn btn-danger btn-sm" disabled="@_busy" @onclick="ExecuteConfirmedAction">Yes, @_confirmActionLabel</button>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -54,8 +120,13 @@ else
     private string? _actionMessage;
     private string? _checkInMessage;
     private ApiClient.CommitmentSummary? _c;
+    private List<ApiClient.CheckIn> _checkIns = new();
+    private bool _checkInsLoading;
 
+    private bool _showCheckInModal;
     private CheckInForm _checkIn = new();
+    private Func<Guid, Task<HttpResponseMessage>>? _confirmAction;
+    private string? _confirmActionLabel;
 
     private class CheckInForm { public string? Note { get; set; } }
 
@@ -70,6 +141,32 @@ else
         try { _c = await Api.GetCommitmentAsync(Id); }
         catch (Exception ex) { _error = ex.Message; }
         finally { _loading = false; }
+        await LoadCheckIns();
+    }
+
+    private async Task LoadCheckIns()
+    {
+        _checkInsLoading = true;
+        try { _checkIns = (await Api.GetCheckInsAsync(Id))?.OrderByDescending(c => c.OccurredAtUtc).Take(10).ToList() ?? new(); }
+        catch { }
+        finally { _checkInsLoading = false; }
+    }
+
+    private void ShowCheckInModal() { _showCheckInModal = true; _checkInMessage = null; }
+    private void CloseCheckInModal() { _showCheckInModal = false; }
+
+    private void ConfirmAction(string label, Func<Guid, Task<HttpResponseMessage>> action)
+    {
+        _confirmActionLabel = label;
+        _confirmAction = action;
+    }
+    private void CancelConfirm() { _confirmAction = null; _confirmActionLabel = null; }
+
+    private async Task ExecuteConfirmedAction()
+    {
+        if (_confirmAction == null) return;
+        await DoAction(_confirmAction);
+        CancelConfirm();
     }
 
     private async Task DoAction(Func<Guid, Task<HttpResponseMessage>> action)
@@ -105,6 +202,7 @@ else
             {
                 _checkInMessage = "Check-in created";
                 _checkIn = new();
+                await LoadCheckIns();
                 _c = await Api.GetCommitmentAsync(Id);
             }
             else
