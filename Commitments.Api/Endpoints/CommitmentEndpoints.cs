@@ -5,6 +5,7 @@ using Commitments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using Commitments.Api.Payments;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Microsoft.AspNetCore.Builder;
 
@@ -12,7 +13,7 @@ public static class CommitmentEndpoints
 {
     public static IEndpointRouteBuilder MapCommitmentEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/commitments");
+        var group = app.MapGroup("/commitments").RequireAuthorization();
 
         group.MapPost("", async (CreateCommitmentRequest req, AppDbContext db, IPaymentService payments) =>
         {

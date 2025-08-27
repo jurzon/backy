@@ -12,11 +12,26 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Commitments API", Version = "v1" });
+    c.AddSecurityDefinition("basic", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "basic",
+        Description = "Basic authentication (dev only)"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "basic" } }, Array.Empty<string>() }
+    });
+});
 
 builder.Services.AddAuthentication("Basic").AddScheme<AuthenticationSchemeOptions, BasicAuthHandler>("Basic", _ => { });
 builder.Services.AddAuthorization();
@@ -66,12 +81,12 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
+app.MapGet("/health", [AllowAnonymous]() => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
 
 app.MapCommitmentEndpoints();
 
 // Payments placeholder endpoint (webhook stub)
-app.MapPost("/webhooks/stripe", async (HttpRequest request, IPaymentService payments) =>
+app.MapPost("/webhooks/stripe", [AllowAnonymous] async (HttpRequest request, IPaymentService payments) =>
 {
     var json = await new StreamReader(request.Body).ReadToEndAsync();
     try
