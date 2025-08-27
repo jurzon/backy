@@ -4,6 +4,8 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using Commitments.Api.Background;
 using Commitments.Domain.Abstractions;
+using Commitments.Api.Payments;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +15,11 @@ builder.Services.AddSwaggerGen();
 var conn = builder.Configuration.GetConnectionString("Postgres") ?? "Host=localhost;Username=commitments;Password=commitments;Database=commitments";
 builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(conn));
 
-// Hangfire configuration (non-obsolete overload)
+// Stripe API Key (dev: can be empty placeholder)
+var stripeKey = builder.Configuration.GetValue<string>("Stripe:ApiKey");
+if (!string.IsNullOrWhiteSpace(stripeKey)) StripeConfiguration.ApiKey = stripeKey;
+
+// Hangfire configuration
 builder.Services.AddHangfire(config =>
     config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
           .UseSimpleAssemblyNameTypeSerializer()
@@ -25,6 +31,7 @@ builder.Services.AddHangfireServer();
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddScoped<IReminderScheduler, ReminderScheduler>();
 builder.Services.AddScoped<IGraceExpiryScanner, GraceExpiryScanner>();
+builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 
 var app = builder.Build();
 
@@ -45,6 +52,9 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcNow }));
 
 app.MapCommitmentEndpoints();
+
+// Payments placeholder endpoint (webhook stub)
+app.MapPost("/webhooks/stripe", () => Results.Ok());
 
 // Recurring jobs
 RecurringJob.AddOrUpdate<ReminderHorizonJob>("reminder-horizon", job => job.RunAsync(), "*/15 * * * *");

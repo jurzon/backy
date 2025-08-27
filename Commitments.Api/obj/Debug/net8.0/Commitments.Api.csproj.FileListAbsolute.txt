@@ -116,3 +116,6 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\refint\Commit
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\Commitments.Api.pdb
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\Commitments.Api.genruntimeconfig.cache
 C:\Users\zonne\Source\Repos\backy\Commitments.Api\obj\Debug\net8.0\ref\Commitments.Api.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\Stripe.net.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\System.Configuration.ConfigurationManager.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Api\bin\Debug\net8.0\System.Security.Cryptography.ProtectedData.dll

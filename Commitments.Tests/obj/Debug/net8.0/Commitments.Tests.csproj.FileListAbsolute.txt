@@ -111,7 +111,6 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\zh-Hans\Mic
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\zh-Hant\Microsoft.TestPlatform.CommunicationUtilities.resources.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\zh-Hant\Microsoft.TestPlatform.CrossPlatEngine.resources.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\zh-Hant\Microsoft.VisualStudio.TestPlatform.Common.resources.dll
-C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\runtimes\win\lib\netstandard2.0\System.Security.Cryptography.ProtectedData.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Commitments.Api.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Commitments.Domain.dll
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Commitments.Infrastructure.dll
@@ -130,3 +129,4 @@ C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\refint\Comm
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments.Tests.pdb
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\Commitments.Tests.genruntimeconfig.cache
 C:\Users\zonne\Source\Repos\backy\Commitments.Tests\obj\Debug\net8.0\ref\Commitments.Tests.dll
+C:\Users\zonne\Source\Repos\backy\Commitments.Tests\bin\Debug\net8.0\Stripe.net.dll
