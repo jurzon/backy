@@ -24,20 +24,61 @@ else
         <dt class="col-sm-3">Risk</dt><dd class="col-sm-9">@_c.RiskBadge</dd>
         <dt class="col-sm-3">Deadline</dt><dd class="col-sm-9">@_c.DeadlineUtc.ToString("u")</dd>
     </dl>
+    <div class="mb-3">
+        <button class="btn btn-sm btn-warning me-2" disabled="@_busy" @onclick="() => DoAction(Api.CancelAsync)">Cancel</button>
+        <button class="btn btn-sm btn-success me-2" disabled="@_busy" @onclick="() => DoAction(Api.CompleteAsync)">Complete</button>
+        <button class="btn btn-sm btn-danger me-2" disabled="@_busy" @onclick="() => DoAction(Api.FailAsync)">Fail</button>
+        <button class="btn btn-sm btn-outline-danger" disabled="@_busy" @onclick="() => DoAction(Api.DeleteAsync)">Delete</button>
+    </div>
+    @if (_actionMessage != null)
+    {
+        <div class="alert alert-info">@_actionMessage</div>
+    }
     <a class="btn btn-secondary" href="/commitments">Back</a>
 }
 
 @code {
     [Parameter] public Guid Id { get; set; }
     private bool _loading = true;
+    private bool _busy;
     private string? _error;
+    private string? _actionMessage;
     private ApiClient.CommitmentSummary? _c;
 
     protected override async Task OnParametersSetAsync()
     {
-        _loading = true; _error = null;
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true; _error = null; _actionMessage = null;
         try { _c = await Api.GetCommitmentAsync(Id); }
         catch (Exception ex) { _error = ex.Message; }
         finally { _loading = false; }
+    }
+
+    private async Task DoAction(Func<Guid, Task<HttpResponseMessage>> action)
+    {
+        _busy = true; _actionMessage = null;
+        try
+        {
+            var resp = await action(Id);
+            if (resp.IsSuccessStatusCode)
+            {
+                _actionMessage = "Action OK";
+                // refresh commitment
+                _c = await Api.GetCommitmentAsync(Id);
+            }
+            else
+            {
+                _actionMessage = "Action failed: " + await resp.Content.ReadAsStringAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _actionMessage = ex.Message;
+        }
+        finally { _busy = false; }
     }
 }

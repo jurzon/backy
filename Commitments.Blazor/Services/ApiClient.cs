@@ -19,5 +19,10 @@ public class ApiClient
     public async Task<CommitmentSummary?> GetCommitmentAsync(Guid id, CancellationToken ct = default)
         => await _http.GetFromJsonAsync<CommitmentSummary>($"commitments/{id}", ct);
 
+    public Task<HttpResponseMessage> CancelAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/cancel", null);
+    public Task<HttpResponseMessage> CompleteAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/complete", null);
+    public Task<HttpResponseMessage> FailAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/fail", null);
+    public Task<HttpResponseMessage> DeleteAsync(Guid id) => _http.PostAsync($"commitments/{id}/actions/delete", null);
+
     private class ResponseWrapper { public List<CommitmentSummary>? items { get; set; } }
 }
