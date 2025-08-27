@@ -2,5 +2,15 @@
   <PropertyGroup>
     <!-- Disable implicit fallback NuGet packages folder to avoid Windows VS path inside Linux container -->
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <Nullable>enable</Nullable>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors Condition="'$(CI)'=='true'">true</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS0618;CS9113</NoWarn>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556" PrivateAssets="all" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.12.0" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

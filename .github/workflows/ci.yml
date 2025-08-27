@@ -9,6 +9,8 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    env:
+      CI: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,6 +19,14 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
+
+      - name: Cache NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-
 
       - name: Restore
         run: dotnet restore Backy.sln

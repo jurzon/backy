@@ -1,0 +1,41 @@
+root = true
+
+# General .NET code style
+[*.cs]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+# Nullable warnings
+# Encourage explicit nullability usage
+ dotnet_style_nullable_annotation = true:suggestion
+ dotnet_style_nullable_warning = true:warning
+
+# Analyzer severities adjustments
+# Security / reliability high
+ dotnet_diagnostic.CA1305.severity = warning
+ dotnet_diagnostic.CA2000.severity = warning
+ dotnet_diagnostic.CA2016.severity = error
+ dotnet_diagnostic.CA2208.severity = warning
+
+# StyleCop suppress some verbose rules for now
+ dotnet_diagnostic.SA1633.severity = none   # file headers
+ dotnet_diagnostic.SA1600.severity = suggestion # documentation
+ dotnet_diagnostic.SA1309.severity = none   # field underscore prefix optional
+
+# Naming preferences
+ dotnet_naming_rule.private_fields_underscore.symbols  = private_fields
+ dotnet_naming_rule.private_fields_underscore.style    = underscore_prefix
+ dotnet_naming_rule.private_fields_underscore.severity = suggestion
+ dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+ dotnet_naming_symbols.private_fields.applicable_kinds = field
+ dotnet_naming_style.underscore_prefix.required_prefix = _
+ dotnet_naming_style.underscore_prefix.capitalization = camel_case
+
+# Treat unused parameters as suggestion for iterative tightening
+ dotnet_diagnostic.CS unused_parameter.severity = suggestion
+
+# Allow TODO comments
+ dotnet_diagnostic.IDE0073.severity = none
