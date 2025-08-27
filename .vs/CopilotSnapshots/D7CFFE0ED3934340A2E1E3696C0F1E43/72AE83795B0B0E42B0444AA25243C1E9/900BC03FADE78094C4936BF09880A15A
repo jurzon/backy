@@ -1,11 +1,10 @@
-using Commitments.Infrastructure;
+﻿using Commitments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Hangfire;
 using Hangfire.PostgreSql;
 using Commitments.Api.Background;
 using Commitments.Domain.Abstractions;
 using Commitments.Api.Payments;
-using Commitments.Api.Notifications;
 using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,9 +34,6 @@ builder.Services.AddScoped<IReminderScheduler, ReminderScheduler>();
 builder.Services.AddScoped<IGraceExpiryScanner, GraceExpiryScanner>();
 builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 builder.Services.AddScoped<IPaymentRetryWorker, PaymentRetryWorker>();
-// Notifications
-builder.Services.AddScoped<INotificationSender, ConsoleNotificationSender>();
-builder.Services.AddScoped<IReminderNotificationDispatcher, ReminderNotificationDispatcher>();
 
 var app = builder.Build();
 
@@ -99,6 +95,5 @@ app.MapPost("/webhooks/stripe", async (HttpRequest request, IPaymentService paym
 RecurringJob.AddOrUpdate<ReminderHorizonJob>("reminder-horizon", job => job.RunAsync(), "*/15 * * * *");
 RecurringJob.AddOrUpdate<GraceExpiryJob>("grace-expiry", job => job.RunAsync(), "*/5 * * * *");
 RecurringJob.AddOrUpdate("payment-retry", () => app.Services.CreateScope().ServiceProvider.GetRequiredService<IPaymentRetryWorker>().RunAsync(), Cron.Daily);
-RecurringJob.AddOrUpdate<ReminderNotificationJob>("reminder-dispatch", job => job.RunAsync(), "*/10 * * * *");
 
 app.Run();

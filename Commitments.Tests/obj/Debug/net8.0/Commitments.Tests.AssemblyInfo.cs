@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Commitments.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d06e8a37d5329127f2c6d062861c00eb4efd8f88")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f3bf9fd5d222dc81fc23de273c41e459d6f157da")]
 [assembly: System.Reflection.AssemblyProductAttribute("Commitments.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Commitments.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
