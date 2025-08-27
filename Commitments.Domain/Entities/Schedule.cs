@@ -7,11 +7,11 @@ public class Schedule
     public int Interval { get; private set; } = 1; // every N units (days / weeks / months)
     public WeekdayMask Weekdays { get; private set; } = WeekdayMask.Monday; // for weekly
     public int? MonthDay { get; private set; } // for monthly by fixed day
-    public int? NthWeek { get; private set; } // for monthly nth weekday (1..5 or -1 for last TBD later)
+    public int? NthWeek { get; private set; } // for monthly nth weekday (1..5 or -1 for last)
     public int? NthWeekday { get; private set; } // 0=Mon .. 6=Sun
-    public DateOnly StartDate { get; private set; }
-    public TimeOnly TimeOfDay { get; private set; }
-    public string Timezone { get; private set; } = "UTC"; // (future use)
+    public DateOnly StartDate { get; private set; } // stored as local date in timezone
+    public TimeOnly TimeOfDay { get; private set; } // local time
+    public string Timezone { get; private set; } = "UTC"; // IANA/Windows accepted
 
     private Schedule() {}
 
@@ -59,6 +59,47 @@ public class Schedule
             NthWeekday = nthWeekday
         };
 
+    private TimeZoneInfo ResolveTz()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(Timezone);
+        }
+        catch
+        {
+            // Fallbacks for common IANA on Windows or vice versa not handled exhaustively here.
+            return TimeZoneInfo.Utc;
+        }
+    }
+
+    private DateTime LocalToUtc(DateOnly date, TimeOnly time, TimeZoneInfo tz)
+    {
+        var unspecified = new DateTime(date.Year, date.Month, date.Day, time.Hour, time.Minute, time.Second, DateTimeKind.Unspecified);
+        // Handle invalid times (DST gaps) by advancing minute until valid
+        var probe = unspecified;
+        for (int i = 0; i < 120; i++)
+        {
+            if (!tz.IsInvalidTime(probe))
+            {
+                if (tz.IsAmbiguousTime(probe))
+                {
+                    // choose first mapping (earliest UTC) by subtracting base offset difference
+                    var offsets = tz.GetAmbiguousTimeOffsets(probe);
+                    return new DateTimeOffset(probe, offsets[0]).UtcDateTime;
+                }
+                return TimeZoneInfo.ConvertTimeToUtc(probe, tz);
+            }
+            probe = probe.AddMinutes(1);
+        }
+        return TimeZoneInfo.ConvertTimeToUtc(unspecified, tz); // fallback
+    }
+
+    private DateTime FirstOccurrenceUtc()
+    {
+        var tz = ResolveTz();
+        return LocalToUtc(StartDate, TimeOfDay, tz);
+    }
+
     public IEnumerable<DateTime> PreviewNextOccurrences(DateTime fromUtc, DateTime deadlineUtc, int count)
     {
         var list = new List<DateTime>();
@@ -79,104 +120,128 @@ public class Schedule
 
         return PatternType switch
         {
-            SchedulePatternType.Daily => NextDaily(afterUtc, deadlineUtc, first),
-            SchedulePatternType.Weekly => NextWeekly(afterUtc, deadlineUtc, first),
-            SchedulePatternType.Monthly => NextMonthly(afterUtc, deadlineUtc, first),
+            SchedulePatternType.Daily => NextDaily(afterUtc, deadlineUtc),
+            SchedulePatternType.Weekly => NextWeekly(afterUtc, deadlineUtc),
+            SchedulePatternType.Monthly => NextMonthly(afterUtc, deadlineUtc),
             _ => null
         };
     }
 
-    private DateTime FirstOccurrenceUtc() => new(StartDate.Year, StartDate.Month, StartDate.Day, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second, DateTimeKind.Utc);
-
-    private DateTime? NextDaily(DateTime afterUtc, DateTime deadlineUtc, DateTime first)
+    private DateTime? NextDaily(DateTime afterUtc, DateTime deadlineUtc)
     {
-        var totalDays = (afterUtc - first).TotalDays;
-        var daysSinceStart = totalDays < 0 ? -1 : (int)Math.Floor(totalDays);
-        var nextIndex = daysSinceStart + 1; // next day index (0-based) after the 'afterUtc'
-        // align to interval
+        var tz = ResolveTz();
+        var afterLocal = TimeZoneInfo.ConvertTimeFromUtc(afterUtc, tz);
+        var startLocal = new DateTime(StartDate.Year, StartDate.Month, StartDate.Day, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second);
+        if (afterLocal < startLocal)
+            return LocalToUtc(StartDate, TimeOfDay, tz);
+        var daysSinceStart = (afterLocal.Date - startLocal.Date).Days;
+        var nextIndex = daysSinceStart + 1;
         if (nextIndex % Interval != 0)
             nextIndex += (Interval - (nextIndex % Interval));
-        var next = first.AddDays(nextIndex);
-        return next >= deadlineUtc ? null : next;
+        var nextLocalDate = StartDate.AddDays(nextIndex);
+        var nextUtc = LocalToUtc(nextLocalDate, TimeOfDay, tz);
+        return nextUtc >= deadlineUtc ? null : nextUtc;
     }
 
-    private DateTime? NextWeekly(DateTime afterUtc, DateTime deadlineUtc, DateTime first)
+    private DateTime? NextWeekly(DateTime afterUtc, DateTime deadlineUtc)
     {
-        // Iterate day by day until we find a valid weekday in an eligible week based on Interval.
-        var cursor = afterUtc.Date.AddDays(1); // start checking from next day
-        var maxScan = 400; // safety cap
-        while (maxScan-- > 0)
+        var tz = ResolveTz();
+        var afterLocal = TimeZoneInfo.ConvertTimeFromUtc(afterUtc, tz);
+        var startLocalDate = StartDate;
+        // Determine week offset from start in local calendar
+        var daysDiff = (afterLocal.Date - new DateTime(startLocalDate.Year, startLocalDate.Month, startLocalDate.Day)).Days;
+        if (daysDiff < 0) return LocalToUtc(StartDate, TimeOfDay, tz);
+        var weeksSinceStart = daysDiff / 7;
+        var weekCursor = weeksSinceStart;
+        for (int scanWeeks = 0; scanWeeks < 260; scanWeeks++) // ~5 years safety
         {
-            var candidateDateTime = new DateTime(cursor.Year, cursor.Month, cursor.Day, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second, DateTimeKind.Utc);
-            if (candidateDateTime >= deadlineUtc) return null;
-            var weeksFromStart = WeeksBetween(first.Date, cursor);
-            if (weeksFromStart >= 0 && weeksFromStart % Interval == 0)
+            if (weekCursor % Interval == 0)
             {
-                var mask = DayOfWeekToMask(cursor.DayOfWeek);
-                if ((Weekdays & mask) != 0 && candidateDateTime > afterUtc)
-                    return candidateDateTime;
+                var weekStartDate = startLocalDate.AddDays(weekCursor * 7);
+                // iterate days in this week (Mon..Sun) respecting Weekdays mask
+                for (int d = 0; d < 7; d++)
+                {
+                    var date = weekStartDate.AddDays(d);
+                    var mask = DayOfWeekToMask((DayOfWeek)(((int)DayOfWeek.Monday + d) % 7));
+                    if ((Weekdays & mask) == 0) continue;
+                    var candidateUtc = LocalToUtc(date, TimeOfDay, tz);
+                    if (candidateUtc > afterUtc)
+                        return candidateUtc >= deadlineUtc ? null : candidateUtc;
+                }
             }
-            cursor = cursor.AddDays(1);
+            weekCursor++;
         }
         return null;
     }
 
-    private static int WeeksBetween(DateOnly start, DateOnly current)
+    private DateTime? NextMonthly(DateTime afterUtc, DateTime deadlineUtc)
     {
-        var diffDays = current.DayNumber - start.DayNumber;
-        return diffDays < 0 ? -1 : diffDays / 7;
-    }
-    private static int WeeksBetween(DateTime start, DateTime current) => WeeksBetween(DateOnly.FromDateTime(start), DateOnly.FromDateTime(current));
-
-    private DateTime? NextMonthly(DateTime afterUtc, DateTime deadlineUtc, DateTime first)
-    {
-        // Determine month steps from start
-        var baseMonthStart = new DateTime(StartDate.Year, StartDate.Month, 1, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second, DateTimeKind.Utc);
-        // Starting from month of 'afterUtc'
-        var cursorMonth = new DateTime(afterUtc.Year, afterUtc.Month, 1, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second, DateTimeKind.Utc);
-
-        // Ensure we start at next day after 'afterUtc'
-        cursorMonth = cursorMonth.AddMonths(0);
-        for (int i = 0; i < 60; i++) // scan up to 5 years
+        var tz = ResolveTz();
+        var afterLocal = TimeZoneInfo.ConvertTimeFromUtc(afterUtc, tz);
+        var monthCursor = new DateOnly(afterLocal.Year, afterLocal.Month, 1);
+        var startMonth = new DateOnly(StartDate.Year, StartDate.Month, 1);
+        for (int i = 0; i < 120; i++)
         {
-            var monthsFromStart = ((cursorMonth.Year - baseMonthStart.Year) * 12) + (cursorMonth.Month - baseMonthStart.Month);
+            var monthsFromStart = ((monthCursor.Year - startMonth.Year) * 12) + (monthCursor.Month - startMonth.Month);
             if (monthsFromStart >= 0 && monthsFromStart % Interval == 0)
             {
-                DateTime? candidate = null;
+                DateOnly? candidateDate = null;
                 if (MonthDay != null)
                 {
-                    var day = MonthDay.Value;
-                    var daysIn = DateTime.DaysInMonth(cursorMonth.Year, cursorMonth.Month);
-                    if (day > daysIn) day = daysIn;
-                    candidate = new DateTime(cursorMonth.Year, cursorMonth.Month, day, TimeOfDay.Hour, TimeOfDay.Minute, TimeOfDay.Second, DateTimeKind.Utc);
+                    var day = Math.Min(MonthDay.Value, DateTime.DaysInMonth(monthCursor.Year, monthCursor.Month));
+                    candidateDate = new DateOnly(monthCursor.Year, monthCursor.Month, day);
                 }
                 else if (NthWeek != null && NthWeekday != null)
                 {
-                    candidate = ComputeNthWeekday(cursorMonth.Year, cursorMonth.Month, NthWeek.Value, NthWeekday.Value, TimeOfDay);
+                    candidateDate = ComputeMonthlyNthDate(monthCursor.Year, monthCursor.Month, NthWeek.Value, NthWeekday.Value);
                 }
-
-                if (candidate != null && candidate > afterUtc)
-                    return candidate >= deadlineUtc ? null : candidate;
+                if (candidateDate != null)
+                {
+                    var candidateUtc = LocalToUtc(candidateDate.Value, TimeOfDay, tz);
+                    if (candidateUtc > afterUtc)
+                        return candidateUtc >= deadlineUtc ? null : candidateUtc;
+                }
             }
-            cursorMonth = cursorMonth.AddMonths(1);
+            monthCursor = monthCursor.AddMonths(1);
         }
         return null;
     }
 
-    private static DateTime? ComputeNthWeekday(int year, int month, int nthWeek, int nthWeekday, TimeOnly time)
+    private static DateOnly? ComputeMonthlyNthDate(int year, int month, int nthWeek, int nthWeekday)
     {
-        if (nthWeek < 1 || nthWeek > 5) return null; // later: support -1 for last
         if (nthWeekday < 0 || nthWeekday > 6) return null;
-        var firstOfMonth = new DateTime(year, month, 1, time.Hour, time.Minute, time.Second, DateTimeKind.Utc);
-        var firstDow = (int)firstOfMonth.DayOfWeek; // 0=Sunday .. 6=Saturday
-        // Convert to Monday=0 .. Sunday=6 mapping we used earlier (NthWeekday 0=Mon)
-        var desiredDow = (nthWeekday + 1) % 7; // convert Mon(0)->1, ..., Sun(6)->0 for DayOfWeek
-        int offset = desiredDow - firstDow;
+        if (nthWeek == -1)
+        {
+            // last weekday of month specified
+            for (int day = DateTime.DaysInMonth(year, month); day >= 1; day--)
+            {
+                var dt = new DateTime(year, month, day);
+                if (ConvertDowToCustom(dt.DayOfWeek) == nthWeekday) return new DateOnly(year, month, day);
+            }
+            return null;
+        }
+        if (nthWeek < 1 || nthWeek > 5) return null;
+        var firstOfMonth = new DateTime(year, month, 1);
+        // custom mapping Mon(0)..Sun(6); System Sunday=0
+        int desiredDowSystem = (nthWeekday + 1) % 7; // convert custom Mon0 to Monday1 etc.
+        int offset = desiredDowSystem - (int)firstOfMonth.DayOfWeek;
         if (offset < 0) offset += 7;
-        var day = 1 + offset + (nthWeek - 1) * 7;
-        if (day > DateTime.DaysInMonth(year, month)) return null;
-        return new DateTime(year, month, day, time.Hour, time.Minute, time.Second, DateTimeKind.Utc);
+        var dayNum = 1 + offset + (nthWeek - 1) * 7;
+        if (dayNum > DateTime.DaysInMonth(year, month)) return null;
+        return new DateOnly(year, month, dayNum);
     }
+
+    private static int ConvertDowToCustom(DayOfWeek dow) => dow switch
+    {
+        DayOfWeek.Monday => 0,
+        DayOfWeek.Tuesday => 1,
+        DayOfWeek.Wednesday => 2,
+        DayOfWeek.Thursday => 3,
+        DayOfWeek.Friday => 4,
+        DayOfWeek.Saturday => 5,
+        DayOfWeek.Sunday => 6,
+        _ => 0
+    };
 
     public int CountOccurrencesUpTo(DateTime untilExclusiveUtc, DateTime deadlineUtc, int safetyCap = 1000)
     {
