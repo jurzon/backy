@@ -21,6 +21,12 @@ public class DevAuthStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
     }
 
+    public void Logout()
+    {
+        _current = new ClaimsPrincipal(new ClaimsIdentity()); // anonymous
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+    }
+
     private static ClaimsPrincipal BuildPrincipal(string name, string id)
     {
         var claims = new[]
