@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PaymentIntentLog> PaymentIntentLogs => Set<PaymentIntentLog>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<ReminderEvent> ReminderEvents => Set<ReminderEvent>();
+    public DbSet<PaymentSetupState> PaymentSetupStates => Set<PaymentSetupState>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -42,6 +43,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasIndex(x => x.CommitmentId);
             e.Property(x => x.StripePaymentIntentId).HasMaxLength(200);
             e.HasIndex(x => new { x.CommitmentId, x.AttemptNumber }).IsUnique();
+        });
+
+        b.Entity<PaymentSetupState>(e =>
+        {
+            e.HasKey(x => x.UserId);
         });
 
         b.Entity<AuditLog>(e =>
