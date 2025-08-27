@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(o => o.UseNpgsql(conn));
 
 // Stripe API Key (dev: can be empty placeholder)
 var stripeKey = builder.Configuration.GetValue<string>("Stripe:ApiKey");
+var stripeWebhookSecret = builder.Configuration.GetValue<string>("Stripe:WebhookSecret");
 if (!string.IsNullOrWhiteSpace(stripeKey)) StripeConfiguration.ApiKey = stripeKey;
 
 // Hangfire configuration
@@ -54,7 +55,40 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTime.UtcN
 app.MapCommitmentEndpoints();
 
 // Payments placeholder endpoint (webhook stub)
-app.MapPost("/webhooks/stripe", () => Results.Ok());
+app.MapPost("/webhooks/stripe", async (HttpRequest request, IPaymentService payments) =>
+{
+    var json = await new StreamReader(request.Body).ReadToEndAsync();
+    try
+    {
+        Event stripeEvent;
+        if (!string.IsNullOrWhiteSpace(stripeWebhookSecret))
+        {
+            var sigHeader = request.Headers["Stripe-Signature"].ToString();
+            stripeEvent = EventUtility.ConstructEvent(json, sigHeader, stripeWebhookSecret);
+        }
+        else
+        {
+            stripeEvent = EventUtility.ParseEvent(json);
+        }
+
+        switch (stripeEvent.Type)
+        {
+            case "payment_intent.succeeded":
+                if (stripeEvent.Data.Object is PaymentIntent pis)
+                    await payments.UpdatePaymentStatusAsync(pis.Id, "succeeded");
+                break;
+            case "payment_intent.payment_failed":
+                if (stripeEvent.Data.Object is PaymentIntent pif)
+                    await payments.UpdatePaymentStatusAsync(pif.Id, "failed", pif.LastPaymentError?.Code);
+                break;
+        }
+        return Results.Ok();
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message, statusCode: 400);
+    }
+}).WithName("StripeWebhook").WithOpenApi();
 
 // Recurring jobs
 RecurringJob.AddOrUpdate<ReminderHorizonJob>("reminder-horizon", job => job.RunAsync(), "*/15 * * * *");

@@ -4,6 +4,7 @@ using Commitments.Domain.Entities;
 using Commitments.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using Commitments.Api.Payments;
 
 namespace Microsoft.AspNetCore.Builder;
 
@@ -13,7 +14,7 @@ public static class CommitmentEndpoints
     {
         var group = app.MapGroup("/commitments");
 
-        group.MapPost("", async (CreateCommitmentRequest req, AppDbContext db) =>
+        group.MapPost("", async (CreateCommitmentRequest req, AppDbContext db, IPaymentService payments) =>
         {
             var errors = CommitmentRequestValidator.Validate(req);
             if (errors.Count > 0) return Results.ValidationProblem(errors);
@@ -25,6 +26,7 @@ public static class CommitmentEndpoints
                 db.Commitments.Add(commitment);
                 db.AuditLogs.Add(new AuditLog { CommitmentId = commitment.Id, UserId = commitment.UserId, EventType = "commitment.created", DataJson = JsonSerializer.Serialize(new { commitment.Id, commitment.Goal }) });
                 await db.SaveChangesAsync();
+                await payments.EnsureSetupIntentAsync(commitment.UserId);
                 return Results.Created($"/commitments/{commitment.Id}", commitment.ToSummary());
             }
             catch (Exception ex)
@@ -149,7 +151,7 @@ public static class CommitmentEndpoints
         }).WithName("CompleteCommitment").WithOpenApi();
 
         // Fail
-        group.MapPost("{id:guid}/actions/fail", async (Guid id, AppDbContext db) =>
+        group.MapPost("{id:guid}/actions/fail", async (Guid id, AppDbContext db, IPaymentService payments) =>
         {
             var c = await db.Commitments.FirstOrDefaultAsync(x => x.Id == id);
             if (c == null) return Results.NotFound();
@@ -158,7 +160,9 @@ public static class CommitmentEndpoints
                 c.Fail();
                 db.AuditLogs.Add(new AuditLog { CommitmentId = c.Id, UserId = c.UserId, EventType = "commitment.failed", DataJson = JsonSerializer.Serialize(new { c.Id }) });
                 await db.SaveChangesAsync();
-                return Results.Ok(c.ToSummary());
+                // create payment intent
+                var pi = await payments.CreateFailurePaymentIntentAsync(c);
+                return Results.Ok(new { commitment = c.ToSummary(), paymentIntent = pi.StripePaymentIntentId, status = pi.Status });
             }
             catch (Exception ex) { return Results.Problem(ex.Message, statusCode: 400); }
         }).WithName("FailCommitment").WithOpenApi();

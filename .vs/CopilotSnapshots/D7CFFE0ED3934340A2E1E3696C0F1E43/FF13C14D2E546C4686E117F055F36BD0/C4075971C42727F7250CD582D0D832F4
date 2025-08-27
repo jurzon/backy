@@ -1,0 +1,42 @@
+﻿using Stripe;
+
+namespace Commitments.Api.Payments;
+
+public interface IPaymentService
+{
+    Task EnsureSetupIntentAsync(Guid userId, CancellationToken ct = default);
+    Task<string> CreateFailurePaymentIntentAsync(Guid commitmentId, long amountMinor, string currency, CancellationToken ct = default);
+}
+
+public class StripePaymentService : IPaymentService
+{
+    private readonly PaymentIntentService _pi;
+    private readonly SetupIntentService _si;
+
+    public StripePaymentService()
+    {
+        _pi = new PaymentIntentService();
+        _si = new SetupIntentService();
+    }
+
+    public async Task EnsureSetupIntentAsync(Guid userId, CancellationToken ct = default)
+    {
+        // Placeholder: would look up existing default PM; create SetupIntent if missing.
+        await Task.CompletedTask;
+    }
+
+    public async Task<string> CreateFailurePaymentIntentAsync(Guid commitmentId, long amountMinor, string currency, CancellationToken ct = default)
+    {
+        var idempotencyKey = $"fail-{commitmentId}"; // TODO include sequence number
+        var req = new PaymentIntentCreateOptions
+        {
+            Amount = amountMinor,
+            Currency = currency.ToLowerInvariant(),
+            Metadata = new Dictionary<string, string>{{"commitment_id", commitmentId.ToString()}}
+        };
+        // NOTE: For now do not actually call Stripe in tests (requires API key). In real env StripeConfiguration.ApiKey must be set.
+        // var pi = await _pi.CreateAsync(req,new RequestOptions{IdempotencyKey=idempotencyKey},ct);
+        // return pi.Id;
+        return idempotencyKey; // placeholder id
+    }
+}
